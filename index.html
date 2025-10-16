@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Quittance de Loyer</title>
+    <!-- Chargement de Tailwind CSS pour un design responsive et moderne -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chargement de Chart.js pour la visualisation des données -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Styles de base pour l'esthétique et la réactivité */
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .form-input { width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; }
+        .form-input:focus { outline: none; border-color: #4a90e2; box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #4a5568; }
+        .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); padding: 1.5rem; }
+        .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; text-align: center; cursor: pointer; background-color: #4a90e2; color: white; }
+        .btn:hover { background-color: #357abd; }
+
+        /* Conteneur pour le graphique (essentiel pour la réactivité de Chart.js) */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        /* Styles d'impression : Masque les outils (formulaires/boutons) pour imprimer uniquement la quittance */
+        @media print {
+            body * { visibility: hidden; }
+            #quittance-preview, #quittance-preview * { visibility: visible; }
+            #quittance-preview {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-10 no-print">
+            <h1 class="text-4xl font-bold text-gray-900">Générateur de Quittance de Loyer</h1>
+            <p class="text-lg text-gray-600 mt-2">Éditez les informations ci-dessous pour générer et imprimer votre quittance.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- VOLET GAUCHE : FORMULAIRE D'ÉDITION (Masqué à l'impression grâce à la classe 'no-print') -->
+            <div class="space-y-8 no-print">
+                <section class="card">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Paramètres de la Quittance</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Période et Date -->
+                        <div>
+                            <label for="periode" class="form-label">Période (Mois)</label>
+                            <input type="month" id="periode" class="form-input" value="2025-09">
+                        </div>
+                        <div>
+                            <label for="date-emission" class="form-label">Date d'émission</label>
+                            <input type="date" id="date-emission" class="form-input">
+                        </div>
+                        <!-- Montants (avec valeurs par défaut du modèle PDF) -->
+                        <div>
+                            <label for="loyer" class="form-label">Loyer Hors Charges (€)</label>
+                            <input type="number" id="loyer" class="form-input" value="448.85" step="0.01">
+                        </div>
+                        <div>
+                            <label for="charges" class="form-label">Charges (€)</label>
+                            <input type="number" id="charges" class="form-input" value="91.00" step="0.01">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Parties (Propriétaire / Locataire)</h2>
+                     <div class="space-y-6">
+                        <!-- Infos Propriétaire -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2 text-gray-700">Propriétaire</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label for="prop-nom" class="form-label">Nom</label><input type="text" id="prop-nom" class="form-input" value="René Osias ASSENDAHI"></div>
+                                <div><label for="prop-contact" class="form-label">Contact</label><input type="text" id="prop-contact" class="form-input" value="0668336085 / essonne1992@gmail.com"></div>
+                            </div>
+                        </div>
+                        <!-- Infos Locataire -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2 text-gray-700">Locataire</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label for="loc-nom" class="form-label">Nom</label><input type="text" id="loc-nom" class="form-input" value="SOLIHA SEINE ET MARNE"></div>
+                                <div><label for="loc-adresse" class="form-label">Adresse du logement</label><input type="text" id="loc-adresse" class="form-input" value="76 rue dian fossey 77000 melun"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Section de visualisation (Graphique) -->
+                <section class="card">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Composition du Loyer</h2>
+                    <p class="text-gray-600 mb-4">Aperçu visuel de la répartition Loyer / Charges.</p>
+                    <div class="chart-container">
+                        <canvas id="repartitionChart"></canvas>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VOLET DROIT : APERÇU DE LA QUITTANCE IMPRIMABLE -->
+            <div class="space-y-8">
+                 <section id="quittance-preview" class="card quittance-preview flex flex-col p-8 md:p-12">
+                    <h2 class="text-3xl font-bold text-center mb-8">QUITTANCE DE LOYER</h2>
+
+                    <!-- Bloc infos (Propriétaire/Locataire) -->
+                    <div class="grid grid-cols-2 gap-8 mb-8 text-sm">
+                        <div>
+                            <h3 class="font-semibold border-b pb-1 mb-2">PROPRIÉTAIRE</h3>
+                            <p id="preview-prop-nom" class="font-medium"></p>
+                            <p id="preview-prop-contact" class="text-gray-600"></p>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold border-b pb-1 mb-2">LOCATAIRE</h3>
+                            <p id="preview-loc-nom" class="font-medium"></p>
+                            <p class="text-gray-600">Logement situé au :</p>
+                            <p id="preview-loc-adresse" class="font-medium"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <p class="text-lg"><strong>Période :</strong> <span id="preview-periode"></span></p>
+                    </div>
+
+                    <!-- Texte principal avec le total en toutes lettres -->
+                    <p class="mb-6">Je soussigné, <strong id="preview-prop-nom-text"></strong>, propriétaire du logement situé au <strong id="preview-loc-adresse-text"></strong>, atteste avoir reçu, de la part de <strong id="preview-loc-nom-text"></strong>, la somme de <strong id="total-text"></strong>, se décomposant comme suit :</p>
+
+                    <!-- Tableau des montants -->
+                    <table class="w-full mb-8 border">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="text-left p-3 font-semibold">Désignation</th>
+                                <th class="text-right p-3 font-semibold">Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-t">
+                                <td class="p-3">Loyer</td>
+                                <td id="preview-loyer" class="text-right p-3"></td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="p-3">Charges</td>
+                                <td id="preview-charges" class="text-right p-3"></td>
+                            </tr>
+                            <tr class="border-t bg-gray-100 font-bold">
+                                <td class="p-3">TOTAL</td>
+                                <td id="preview-total" class="text-right p-3"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Signature et date -->
+                    <div class="text-center mt-auto">
+                        <p class="mb-8">Fait le <span id="preview-date-emission"></span></p>
+                        <p class="font-semibold" id="preview-signature"></p>
+                    </div>
+                     <!-- Mentions légales (du modèle PDF) -->
+                     <div class="text-xs text-gray-500 mt-12 pt-4 border-t">
+                        <p>Le paiement de la présente n'emporte pas présomption de paiement des termes antérieurs. Cette quittance ou ce reçu annule tous les reçus qui auraient pu être donnés pour acompte versé sur le présent terme. En cas de congé précédemment donné, cette quittance ou ce reçu représenterait l'indemnité d'occupation et ne saurait être considéré comme un titre d'occupation. Sous réserve d'encaissement.</p>
+                    </div>
+                </section>
+                
+                <div class="card text-center no-print">
+                     <button id="print-btn" class="btn w-full">Imprimer la Quittance</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Récupération des éléments HTML (Inputs et Zones d'affichage)
+            const inputs = {
+                periode: document.getElementById('periode'),
+                dateEmission: document.getElementById('date-emission'),
+                loyer: document.getElementById('loyer'),
+                charges: document.getElementById('charges'),
+                propNom: document.getElementById('prop-nom'),
+                propContact: document.getElementById('prop-contact'),
+                locNom: document.getElementById('loc-nom'),
+                locAdresse: document.getElementById('loc-adresse'),
+            };
+
+            const previews = {
+                propNom: document.getElementById('preview-prop-nom'),
+                propContact: document.getElementById('preview-prop-contact'),
+                locNom: document.getElementById('preview-loc-nom'),
+                locAdresse: document.getElementById('preview-loc-adresse'),
+                periode: document.getElementById('preview-periode'),
+                propNomText: document.getElementById('preview-prop-nom-text'),
+                locAdresseText: document.getElementById('preview-loc-adresse-text'),
+                locNomText: document.getElementById('preview-loc-nom-text'),
+                totalText: document.getElementById('total-text'),
+                loyer: document.getElementById('preview-loyer'),
+                charges: document.getElementById('preview-charges'),
+                total: document.getElementById('preview-total'),
+                dateEmission: document.getElementById('preview-date-emission'),
+                signature: document.getElementById('preview-signature'),
+            };
+
+            let repartitionChart;
+
+            // 2. Fonction de conversion de nombre à toutes lettres (Français)
+            function numberToWordsFrench(n) {
+                if (n === 0) return 'Zéro Euro';
+                const s = n.toString();
+                let part = s.split('.');
+                let euros = parseInt(part[0]);
+                let centimes = part.length > 1 ? parseInt(part[1].padEnd(2, '0')) : 0;
+
+                const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+                const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+                const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+
+                function convert(num) {
+                    if (num < 10) return units[num];
+                    if (num < 20) return teens[num - 10];
+                    if (num < 70) {
+                        let ten = Math.floor(num / 10);
+                        let unit = num % 10;
+                        if (ten === 6 && unit <= 9) { return 'soixante-' + convert(num - 60); }
+                        return tens[ten] + (unit > 0 ? (unit === 1 && ten === 7 || ten === 9 ? '-et-' : '-') + units[unit] : '');
+                    }
+                    if (num < 80) { return 'soixante-' + convert(num - 60); }
+                    if (num < 90) { return 'quatre-vingt' + (num > 80 ? ('-' + convert(num - 80)) : ''); }
+                    if (num < 100) { return 'quatre-vingt-dix-' + convert(num - 90); }
+                    if (num < 200) { return 'cent' + (num > 100 ? ' ' + convert(num - 100) : ''); }
+                    if (num < 1000) {
+                       let cent = Math.floor(num / 100);
+                       let reste = num % 100;
+                       let res = units[cent] + (cent > 1 && reste === 0 ? ' cents' : ' cent');
+                       return res + (reste > 0 ? ' ' + convert(reste) : '');
+                    }
+                    if (num < 1000000) {
+                        let mille = Math.floor(num / 1000);
+                        let reste = num % 1000;
+                        let res = (mille > 1 ? convert(mille) + ' mille' : 'mille');
+                        return res + (reste > 0 ? ' ' + convert(reste) : '');
+                    }
+                    return '';
+                }
+                
+                // Fonction pour traiter le total (simple pour l'exemple)
+                let euroText = convert(euros).trim() + (euros > 1 ? ' Euros' : ' Euro');
+                let centimeText = centimes > 0 ? (centimes > 1 ? ' et ' + convert(centimes) + ' centimes' : ' et un centime') : '';
+                let result = euroText + centimeText;
+                return result.charAt(0).toUpperCase() + result.slice(1);
+            }
+            
+            // 3. Fonction principale de mise à jour de l'aperçu
+            function updatePreview() {
+                const loyer = parseFloat(inputs.loyer.value) || 0;
+                const charges = parseFloat(inputs.charges.value) || 0;
+                const total = loyer + charges;
+                
+                // Calcul et affichage de la période complète (du 01 au dernier jour du mois)
+                const periodeValue = inputs.periode.value;
+                const [year, month] = periodeValue.split('-');
+                const startDate = `01-${month}-${year}`;
+                const lastDay = new Date(year, month, 0).getDate();
+                const endDate = `${lastDay}-${month}-${year}`;
+
+                // Mise à jour des blocs d'information
+                previews.propNom.textContent = inputs.propNom.value;
+                previews.propContact.textContent = inputs.propContact.value;
+                previews.locNom.textContent = inputs.locNom.value;
+                previews.locAdresse.textContent = inputs.locAdresse.value;
+                previews.periode.textContent = `du ${startDate} au ${endDate}`;
+                
+                // Mise à jour du texte principal
+                previews.propNomText.textContent = inputs.propNom.value;
+                previews.locAdresseText.textContent = inputs.locAdresse.value;
+                previews.locNomText.textContent = inputs.locNom.value;
+                
+                // Mise à jour des montants formatés en Euro
+                previews.loyer.textContent = `${loyer.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+                previews.charges.textContent = `${charges.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+                previews.total.textContent = `${total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+                
+                // Mise à jour du total en toutes lettres
+                previews.totalText.textContent = numberToWordsFrench(total);
+
+                // Mise à jour de la date d'émission (format jj-mm-aaaa)
+                const dateEmissionValue = inputs.dateEmission.value;
+                if(dateEmissionValue) {
+                    const [y, m, d] = dateEmissionValue.split('-');
+                    previews.dateEmission.textContent = `${d}-${m}-${y}`;
+                }
+
+                previews.signature.textContent = inputs.propNom.value;
+                
+                // Mise à jour du graphique
+                updateChart(loyer, charges);
+            }
+            
+            // 4. Initialisation du graphique Chart.js
+            function initChart() {
+                const ctx = document.getElementById('repartitionChart').getContext('2d');
+                repartitionChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Loyer', 'Charges'],
+                        datasets: [{
+                            data: [0, 0],
+                            backgroundColor: ['#4a90e2', '#f5a623'],
+                            borderColor: '#ffffff',
+                            borderWidth: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, /* Nécessaire pour respecter le conteneur */
+                        cutout: '70%',
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (context.parsed !== null) {
+                                            label += ': ' + context.parsed.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 5. Mise à jour du graphique avec les nouvelles valeurs
+            function updateChart(loyer, charges) {
+                if (repartitionChart) {
+                    repartitionChart.data.datasets[0].data = [loyer, charges];
+                    repartitionChart.update();
+                }
+            }
+
+            // 6. Initialisation de la date d'émission à la date du jour
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            inputs.dateEmission.value = `${yyyy}-${mm}-${dd}`;
+
+            // 7. Ajout des écouteurs d'événements à tous les champs
+            Object.values(inputs).forEach(input => {
+                input.addEventListener('keyup', updatePreview);
+                input.addEventListener('change', updatePreview);
+            });
+
+            // 8. Gestion du bouton d'impression
+            document.getElementById('print-btn').addEventListener('click', () => {
+                window.print();
+            });
+            
+            // Initialisation au chargement
+            initChart();
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
