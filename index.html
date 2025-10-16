@@ -14,13 +14,37 @@
 
     <style>
         /* Styles de base pour l'esthétique et la réactivité */
-        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
-        .form-input { width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; }
-        .form-input:focus { outline: none; border-color: #4a90e2; box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; } /* Gris légèrement plus chaud */
+        .form-input { 
+            width: 100%; 
+            padding: 0.75rem; 
+            border: 1px solid #d1d5db; 
+            border-radius: 0.5rem; 
+        }
+        .form-input:focus { 
+            outline: none; 
+            border-color: #10b981; /* Vert forêt */
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3); /* Ombre verte */
+        }
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #4a5568; }
-        .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); padding: 1.5rem; }
-        .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; text-align: center; cursor: pointer; background-color: #4a90e2; color: white; }
-        .btn:hover { background-color: #357abd; }
+        .card { 
+            background-color: white; 
+            border-radius: 0.75rem; 
+            box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.08); /* Ombre plus douce */
+            padding: 1.5rem; 
+        }
+        .btn { 
+            padding: 0.75rem 1.5rem; 
+            border-radius: 0.5rem; 
+            font-weight: 600; 
+            text-align: center; 
+            cursor: pointer; 
+            background-color: #10b981; /* Vert forêt */
+            color: white; 
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); 
+            transition: background-color 0.2s;
+        }
+        .btn:hover { background-color: #059669; } /* Vert plus foncé au survol */
 
         /* Conteneur pour le graphique (essentiel pour la réactivité de Chart.js) */
         .chart-container {
@@ -99,9 +123,10 @@
                         <!-- Infos Locataire -->
                         <div>
                             <h3 class="text-lg font-semibold mb-2 text-gray-700">Locataire</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label for="loc-nom" class="form-label">Nom</label><input type="text" id="loc-nom" class="form-input" value="SOLIHA SEINE ET MARNE"></div>
-                                <div><label for="loc-adresse" class="form-label">Adresse du logement</label><input type="text" id="loc-adresse" class="form-input" value="76 rue dian fossey 77000 melun"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="col-span-3 md:col-span-1"><label for="loc-nom" class="form-label">Nom</label><input type="text" id="loc-nom" class="form-input" value="SOLIHA SEINE ET MARNE"></div>
+                                <div class="col-span-3 md:col-span-1"><label for="loc-email" class="form-label">E-mail Locataire</label><input type="email" id="loc-email" class="form-input" placeholder="exemple@locataire.com"></div>
+                                <div class="col-span-3 md:col-span-1"><label for="loc-adresse" class="form-label">Adresse du logement</label><input type="text" id="loc-adresse" class="form-input" value="76 rue dian fossey 77000 melun"></div>
                             </div>
                         </div>
                     </div>
@@ -120,18 +145,19 @@
             <!-- VOLET DROIT : APERÇU DE LA QUITTANCE IMPRIMABLE -->
             <div class="space-y-8">
                  <section id="quittance-preview" class="card quittance-preview flex flex-col p-8 md:p-12">
-                    <h2 class="text-3xl font-bold text-center mb-8">QUITTANCE DE LOYER</h2>
+                    <h2 class="text-3xl font-bold text-center mb-8 text-green-700">QUITTANCE DE LOYER</h2> <!-- Ajout de couleur ici -->
 
                     <!-- Bloc infos (Propriétaire/Locataire) -->
                     <div class="grid grid-cols-2 gap-8 mb-8 text-sm">
                         <div>
-                            <h3 class="font-semibold border-b pb-1 mb-2">PROPRIÉTAIRE</h3>
+                            <h3 class="font-semibold border-b border-green-200 text-green-800 pb-1 mb-2">PROPRIÉTAIRE</h3>
                             <p id="preview-prop-nom" class="font-medium"></p>
                             <p id="preview-prop-contact" class="text-gray-600"></p>
                         </div>
                         <div>
-                            <h3 class="font-semibold border-b pb-1 mb-2">LOCATAIRE</h3>
+                            <h3 class="font-semibold border-b border-green-200 text-green-800 pb-1 mb-2">LOCATAIRE</h3>
                             <p id="preview-loc-nom" class="font-medium"></p>
+                            <p id="preview-loc-email" class="text-gray-600"></p>
                             <p class="text-gray-600">Logement situé au :</p>
                             <p id="preview-loc-adresse" class="font-medium"></p>
                         </div>
@@ -145,8 +171,8 @@
                     <p class="mb-6">Je soussigné, <strong id="preview-prop-nom-text"></strong>, propriétaire du logement situé au <strong id="preview-loc-adresse-text"></strong>, atteste avoir reçu, de la part de <strong id="preview-loc-nom-text"></strong>, la somme de <strong id="total-text"></strong>, se décomposant comme suit :</p>
 
                     <!-- Tableau des montants -->
-                    <table class="w-full mb-8 border">
-                        <thead class="bg-gray-100">
+                    <table class="w-full mb-8 border border-green-300">
+                        <thead class="bg-green-100 text-green-900">
                             <tr>
                                 <th class="text-left p-3 font-semibold">Désignation</th>
                                 <th class="text-right p-3 font-semibold">Montant</th>
@@ -161,7 +187,7 @@
                                 <td class="p-3">Charges</td>
                                 <td id="preview-charges" class="text-right p-3"></td>
                             </tr>
-                            <tr class="border-t bg-gray-100 font-bold">
+                            <tr class="border-t bg-green-50 text-green-900 font-bold">
                                 <td class="p-3">TOTAL</td>
                                 <td id="preview-total" class="text-right p-3"></td>
                             </tr>
@@ -179,8 +205,9 @@
                     </div>
                 </section>
                 
-                <div class="card text-center no-print">
-                     <button id="print-btn" class="btn w-full">Imprimer la Quittance</button>
+                <div class="card text-center no-print grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <button id="email-btn" class="btn bg-blue-500 hover:bg-blue-600 shadow-md shadow-blue-400/50">Envoyer par E-mail</button>
+                     <button id="print-btn" class="btn">Imprimer la Quittance</button>
                 </div>
             </div>
         </main>
@@ -197,6 +224,7 @@
                 propNom: document.getElementById('prop-nom'),
                 propContact: document.getElementById('prop-contact'),
                 locNom: document.getElementById('loc-nom'),
+                locEmail: document.getElementById('loc-email'), // NOUVEAU
                 locAdresse: document.getElementById('loc-adresse'),
             };
 
@@ -204,6 +232,7 @@
                 propNom: document.getElementById('preview-prop-nom'),
                 propContact: document.getElementById('preview-prop-contact'),
                 locNom: document.getElementById('preview-loc-nom'),
+                locEmail: document.getElementById('preview-loc-email'), // NOUVEAU
                 locAdresse: document.getElementById('preview-loc-adresse'),
                 periode: document.getElementById('preview-periode'),
                 propNomText: document.getElementById('preview-prop-nom-text'),
@@ -283,6 +312,7 @@
                 previews.propNom.textContent = inputs.propNom.value;
                 previews.propContact.textContent = inputs.propContact.value;
                 previews.locNom.textContent = inputs.locNom.value;
+                previews.locEmail.textContent = inputs.locEmail.value; // NOUVEAU
                 previews.locAdresse.textContent = inputs.locAdresse.value;
                 previews.periode.textContent = `du ${startDate} au ${endDate}`;
                 
@@ -321,7 +351,7 @@
                         labels: ['Loyer', 'Charges'],
                         datasets: [{
                             data: [0, 0],
-                            backgroundColor: ['#4a90e2', '#f5a623'],
+                            backgroundColor: ['#10b981', '#f5a623'], /* Vert forêt pour Loyer, Orange pour Charges */
                             borderColor: '#ffffff',
                             borderWidth: 4,
                         }]
@@ -363,16 +393,52 @@
             const dd = String(today.getDate()).padStart(2, '0');
             inputs.dateEmission.value = `${yyyy}-${mm}-${dd}`;
 
-            // 7. Ajout des écouteurs d'événements à tous les champs
+            // 7. Fonction d'envoi d'e-mail (génère le lien mailto)
+            function sendEmail() {
+                const locataire = inputs.locNom.value;
+                const email = inputs.locEmail.value;
+                const periode = previews.periode.textContent;
+                const total = previews.total.textContent;
+                const dateEmission = previews.dateEmission.textContent;
+                const propNom = inputs.propNom.value;
+
+                if (!email) {
+                    alert('Veuillez entrer l\'adresse e-mail du locataire pour utiliser cette fonctionnalité.');
+                    return;
+                }
+
+                const subject = encodeURIComponent(`Quittance de loyer ${periode}`);
+                
+                // Corps du message incluant les informations principales
+                let body = `Bonjour ${locataire},\n\n`;
+                body += `Veuillez trouver ci-joint la quittance de loyer pour la période ${periode}.\n\n`;
+                body += `Montant total payé : ${total}.\n`;
+                body += `Date d'émission : ${dateEmission}.\n\n`;
+                body += `Ceci confirme le règlement de votre loyer et des charges.\n\n`;
+                body += `Cordialement,\n${propNom}`;
+
+                const mailtoLink = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(body)}`;
+                
+                // Ouvre le client de messagerie
+                window.location.href = mailtoLink;
+                
+                // NOTE IMPORTANTE : Le corps du message ne peut pas inclure le PDF lui-même. 
+                // Pour joindre le PDF, l'utilisateur devra l'enregistrer manuellement (via Imprimer > PDF) 
+                // et l'ajouter à l'e-mail qui vient d'être ouvert.
+            }
+
+
+            // 8. Ajout des écouteurs d'événements à tous les champs
             Object.values(inputs).forEach(input => {
                 input.addEventListener('keyup', updatePreview);
                 input.addEventListener('change', updatePreview);
             });
 
-            // 8. Gestion du bouton d'impression
+            // 9. Gestion du bouton d'impression et du nouveau bouton E-mail
             document.getElementById('print-btn').addEventListener('click', () => {
                 window.print();
             });
+            document.getElementById('email-btn').addEventListener('click', sendEmail);
             
             // Initialisation au chargement
             initChart();
