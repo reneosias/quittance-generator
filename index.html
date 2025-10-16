@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Quittance de Loyer</title>
+    <title>Générateur de Quittance & Gestion Locative</title>
     <!-- Chargement de Tailwind CSS pour un design responsive et moderne -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chargement de Chart.js pour la visualisation des données -->
@@ -11,17 +11,41 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module">
+        // Importations Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Définition des variables globales (disponibles après l'initialisation)
+        window.initializeApp = initializeApp;
+        window.getAuth = getAuth;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.getFirestore = getFirestore;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+        window.query = query;
+        window.getDocs = getDocs;
+        window.deleteDoc = deleteDoc;
+        window.setLogLevel = setLogLevel;
+    </script>
+    
     <style>
         /* Styles de base pour l'esthétique et la réactivité */
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; } /* Gris légèrement plus chaud */
-        .form-input { 
+        .form-input, .form-select { 
             width: 100%; 
             padding: 0.75rem; 
             border: 1px solid #d1d5db; 
-            border-radius: 0.5rem; 
+            border-radius: 0.5rem;
+            appearance: none; /* Cache la flèche par défaut pour select */
         }
-        .form-input:focus { 
+        .form-input:focus, .form-select:focus { 
             outline: none; 
             border-color: #10b981; /* Vert forêt */
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3); /* Ombre verte */
@@ -39,13 +63,27 @@
             font-weight: 600; 
             text-align: center; 
             cursor: pointer; 
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary { 
             background-color: #10b981; /* Vert forêt */
             color: white; 
             box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); 
-            transition: background-color 0.2s;
         }
-        .btn:hover { background-color: #059669; } /* Vert plus foncé au survol */
-
+        .btn-primary:hover { background-color: #059669; } /* Vert plus foncé au survol */
+        .btn-secondary {
+            background-color: #ef4444; /* Rouge pour Supprimer/Danger */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.4); 
+        }
+        .btn-secondary:hover { background-color: #dc2626; } /* Rouge plus foncé */
+        .btn-blue {
+            background-color: #3b82f6; /* Bleu pour Email */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4); 
+        }
+        .btn-blue:hover { background-color: #2563eb; }
+        
         /* Conteneur pour le graphique (essentiel pour la réactivité de Chart.js) */
         .chart-container {
             position: relative;
@@ -78,17 +116,30 @@
 
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 no-print">
-            <h1 class="text-4xl font-bold text-gray-900">Générateur de Quittance de Loyer</h1>
-            <p class="text-lg text-gray-600 mt-2">Éditez les informations ci-dessous pour générer et imprimer votre quittance.</p>
+            <h1 class="text-4xl font-bold text-gray-900">Générateur de Quittance & Gestion Locative</h1>
+            <p class="text-lg text-gray-600 mt-2">Gérez, éditez et sauvegardez vos propriétés en temps réel (Sauvegarde Cloud).</p>
+            <div id="auth-status" class="mt-2 text-sm text-gray-500">Connexion en cours...</div>
+            <div id="user-info" class="mt-1 text-xs text-gray-400">ID Utilisateur: <span id="user-id">N/A</span></div>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- VOLET GAUCHE : FORMULAIRE D'ÉDITION (Masqué à l'impression grâce à la classe 'no-print') -->
             <div class="space-y-8 no-print">
                 <section class="card">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Sélection et Gestion des Biens</h2>
+                    <label for="property-selector" class="form-label text-xl font-bold">Choisir la Propriété :</label>
+                    <select id="property-selector" class="form-select mb-4"></select>
+
+                    <!-- Bouton pour créer une nouvelle propriété -->
+                    <button id="add-new-btn" class="btn btn-blue w-full">Ajouter une Nouvelle Propriété</button>
+                    
+                    <div id="action-message" class="text-sm mt-3 text-center font-medium"></div>
+
+                </section>
+
+                <section class="card">
                     <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Paramètres de la Quittance</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Période et Date -->
                         <div>
                             <label for="periode" class="form-label">Période (Mois)</label>
                             <input type="month" id="periode" class="form-input" value="2025-09">
@@ -97,39 +148,45 @@
                             <label for="date-emission" class="form-label">Date d'émission</label>
                             <input type="date" id="date-emission" class="form-input">
                         </div>
-                        <!-- Montants (avec valeurs par défaut du modèle PDF) -->
                         <div>
                             <label for="loyer" class="form-label">Loyer Hors Charges (€)</label>
-                            <input type="number" id="loyer" class="form-input" value="448.85" step="0.01">
+                            <input type="number" id="loyer" class="form-input" value="0.00" step="0.01">
                         </div>
                         <div>
                             <label for="charges" class="form-label">Charges (€)</label>
-                            <input type="number" id="charges" class="form-input" value="91.00" step="0.01">
+                            <input type="number" id="charges" class="form-input" value="0.00" step="0.01">
                         </div>
                     </div>
                 </section>
 
                 <section class="card">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Parties (Propriétaire / Locataire)</h2>
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Parties (Sauvegardées)</h2>
                      <div class="space-y-6">
-                        <!-- Infos Propriétaire -->
+                        <!-- Infos Propriétaire (MODIFIABLE et SAUVEGARDABLE) -->
                         <div>
                             <h3 class="text-lg font-semibold mb-2 text-gray-700">Propriétaire</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label for="prop-nom" class="form-label">Nom</label><input type="text" id="prop-nom" class="form-input" value="René Osias ASSENDAHI"></div>
-                                <div><label for="prop-contact" class="form-label">Contact</label><input type="text" id="prop-contact" class="form-input" value="0668336085 / essonne1992@gmail.com"></div>
+                                <div><label for="prop-nom" class="form-label">Nom</label><input type="text" id="prop-nom" class="form-input"></div>
+                                <div><label for="prop-contact" class="form-label">Contact</label><input type="text" id="prop-contact" class="form-input"></div>
                             </div>
                         </div>
-                        <!-- Infos Locataire -->
+                        <!-- Infos Locataire (MODIFIABLE et SAUVEGARDABLE) -->
                         <div>
                             <h3 class="text-lg font-semibold mb-2 text-gray-700">Locataire</h3>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="col-span-3 md:col-span-1"><label for="loc-nom" class="form-label">Nom</label><input type="text" id="loc-nom" class="form-input" value="SOLIHA SEINE ET MARNE"></div>
-                                <div class="col-span-3 md:col-span-1"><label for="loc-email" class="form-label">E-mail Locataire</label><input type="email" id="loc-email" class="form-input" placeholder="exemple@locataire.com"></div>
-                                <div class="col-span-3 md:col-span-1"><label for="loc-adresse" class="form-label">Adresse du logement</label><input type="text" id="loc-adresse" class="form-input" value="76 rue dian fossey 77000 melun"></div>
+                                <div class="col-span-3 md:col-span-1"><label for="loc-nom" class="form-label">Nom Locataire</label><input type="text" id="loc-nom" class="form-input" value=""></div>
+                                <div class="col-span-3 md:col-span-1"><label for="loc-email" class="form-label">E-mail Locataire</label><input type="email" id="loc-email" class="form-input" placeholder="exemple@locataire.com" value=""></div>
+                                <div class="col-span-3 md:col-span-1"><label for="loc-adresse" class="form-label">Adresse du logement</label><input type="text" id="loc-adresse" class="form-input" value=""></div>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Boutons de Sauvegarde et Suppression -->
+                    <div class="mt-6 grid grid-cols-2 gap-4">
+                        <button id="save-btn" class="btn btn-primary">Sauvegarder ce Bien</button>
+                        <button id="delete-btn" class="btn btn-secondary" disabled>Supprimer ce Bien</button>
+                    </div>
+
                 </section>
                 
                 <!-- Section de visualisation (Graphique) -->
@@ -145,7 +202,7 @@
             <!-- VOLET DROIT : APERÇU DE LA QUITTANCE IMPRIMABLE -->
             <div class="space-y-8">
                  <section id="quittance-preview" class="card quittance-preview flex flex-col p-8 md:p-12">
-                    <h2 class="text-3xl font-bold text-center mb-8 text-green-700">QUITTANCE DE LOYER</h2> <!-- Ajout de couleur ici -->
+                    <h2 class="text-3xl font-bold text-center mb-8 text-green-700">QUITTANCE DE LOYER</h2>
 
                     <!-- Bloc infos (Propriétaire/Locataire) -->
                     <div class="grid grid-cols-2 gap-8 mb-8 text-sm">
@@ -206,243 +263,556 @@
                 </section>
                 
                 <div class="card text-center no-print grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <button id="email-btn" class="btn bg-blue-500 hover:bg-blue-600 shadow-md shadow-blue-400/50">Envoyer par E-mail</button>
-                     <button id="print-btn" class="btn">Imprimer la Quittance</button>
+                     <button id="email-btn" class="btn btn-blue">Envoyer par E-mail</button>
+                     <button id="print-btn" class="btn btn-primary">Imprimer la Quittance</button>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // 1. Récupération des éléments HTML (Inputs et Zones d'affichage)
-            const inputs = {
-                periode: document.getElementById('periode'),
-                dateEmission: document.getElementById('date-emission'),
-                loyer: document.getElementById('loyer'),
-                charges: document.getElementById('charges'),
-                propNom: document.getElementById('prop-nom'),
-                propContact: document.getElementById('prop-contact'),
-                locNom: document.getElementById('loc-nom'),
-                locEmail: document.getElementById('loc-email'), // NOUVEAU
-                locAdresse: document.getElementById('loc-adresse'),
-            };
+        // Variables globales pour Firebase
+        let db, auth, currentUserId, currentProperties = [];
+        let repartitionChart;
+        let isAuthReady = false;
 
-            const previews = {
-                propNom: document.getElementById('preview-prop-nom'),
-                propContact: document.getElementById('preview-prop-contact'),
-                locNom: document.getElementById('preview-loc-nom'),
-                locEmail: document.getElementById('preview-loc-email'), // NOUVEAU
-                locAdresse: document.getElementById('preview-loc-adresse'),
-                periode: document.getElementById('preview-periode'),
-                propNomText: document.getElementById('preview-prop-nom-text'),
-                locAdresseText: document.getElementById('preview-loc-adresse-text'),
-                locNomText: document.getElementById('preview-loc-nom-text'),
-                totalText: document.getElementById('total-text'),
-                loyer: document.getElementById('preview-loyer'),
-                charges: document.getElementById('preview-charges'),
-                total: document.getElementById('preview-total'),
-                dateEmission: document.getElementById('preview-date-emission'),
-                signature: document.getElementById('preview-signature'),
-            };
+        // Données initiales (uniquement utilisées si la base est vide)
+        const initialOwnerData = {
+            nom: "René Osias ASSENDAHI",
+            contact: "0668336085 / essonne1992@gmail.com"
+        };
+        const initialPropertiesData = [
+            {
+                id: 'prop1',
+                locataire: "SOLIHA SEINE ET MARNE",
+                email: "soliha.melun@example.com",
+                adresse: "76 rue dian fossey 77000 melun",
+                loyer_hc: 448.85,
+                charges: 91.00
+            },
+            {
+                id: 'prop2',
+                locataire: "Jean Dupont",
+                email: "jean.dupont@locataire.com",
+                adresse: "12 rue de Rivoli 75004 Paris",
+                loyer_hc: 850.00,
+                charges: 75.00
+            },
+            {
+                id: 'prop3',
+                locataire: "Marie Martin",
+                email: "marie.martin@locataire.com",
+                adresse: "25 quai Saint-Vincent 69001 Lyon",
+                loyer_hc: 620.00,
+                charges: 55.00
+            }
+        ];
+        
+        // 1. Récupération des éléments HTML (Inputs et Zones d'affichage)
+        const inputs = {
+            propertySelector: document.getElementById('property-selector'),
+            periode: document.getElementById('periode'),
+            dateEmission: document.getElementById('date-emission'),
+            loyer: document.getElementById('loyer'),
+            charges: document.getElementById('charges'),
+            propNom: document.getElementById('prop-nom'),
+            propContact: document.getElementById('prop-contact'),
+            locNom: document.getElementById('loc-nom'),
+            locEmail: document.getElementById('loc-email'), 
+            locAdresse: document.getElementById('loc-adresse'),
+            saveBtn: document.getElementById('save-btn'),
+            deleteBtn: document.getElementById('delete-btn'),
+            addNewBtn: document.getElementById('add-new-btn'),
+            actionMessage: document.getElementById('action-message'),
+        };
 
-            let repartitionChart;
+        const previews = {
+            propNom: document.getElementById('preview-prop-nom'),
+            propContact: document.getElementById('preview-prop-contact'),
+            locNom: document.getElementById('preview-loc-nom'),
+            locEmail: document.getElementById('preview-loc-email'),
+            locAdresse: document.getElementById('preview-loc-adresse'),
+            periode: document.getElementById('preview-periode'),
+            propNomText: document.getElementById('preview-prop-nom-text'),
+            locAdresseText: document.getElementById('preview-loc-adresse-text'),
+            locNomText: document.getElementById('preview-loc-nom-text'),
+            totalText: document.getElementById('total-text'),
+            loyer: document.getElementById('preview-loyer'),
+            charges: document.getElementById('preview-charges'),
+            total: document.getElementById('preview-total'),
+            dateEmission: document.getElementById('preview-date-emission'),
+            signature: document.getElementById('preview-signature'),
+        };
 
-            // 2. Fonction de conversion de nombre à toutes lettres (Français)
-            function numberToWordsFrench(n) {
-                if (n === 0) return 'Zéro Euro';
-                const s = n.toString();
-                let part = s.split('.');
-                let euros = parseInt(part[0]);
-                let centimes = part.length > 1 ? parseInt(part[1].padEnd(2, '0')) : 0;
+        // **********************************************************
+        // ** 2. LOGIQUE FIREBASE & GESTION LOCATIVE               **
+        // **********************************************************
 
-                const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
-                const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
-                const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+        // Fonction pour obtenir le chemin de la collection des biens de l'utilisateur
+        function getUserPropertiesCollectionRef() {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            return collection(db, `artifacts/${appId}/users/${currentUserId}/properties`);
+        }
+        
+        // Fonction pour obtenir la référence au document du propriétaire
+        function getOwnerDocRef() {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            return doc(db, `artifacts/${appId}/users/${currentUserId}/config/owner`);
+        }
 
-                function convert(num) {
-                    if (num < 10) return units[num];
-                    if (num < 20) return teens[num - 10];
-                    if (num < 70) {
-                        let ten = Math.floor(num / 10);
-                        let unit = num % 10;
-                        if (ten === 6 && unit <= 9) { return 'soixante-' + convert(num - 60); }
-                        return tens[ten] + (unit > 0 ? (unit === 1 && ten === 7 || ten === 9 ? '-et-' : '-') + units[unit] : '');
+        // 2.1 Authentification et Initialisation
+        async function initializeFirebase() {
+            if (typeof window.initializeApp === 'undefined') {
+                setTimeout(initializeFirebase, 100);
+                return;
+            }
+
+            try {
+                // setLogLevel('debug'); // Décommenter pour déboguer Firebase
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                
+                // --- CORRECTION DE L'ERREUR D'INITIALISATION ---
+                // Vérifie si la configuration est vide. Si c'est le cas, affiche un message d'erreur et stoppe l'initialisation.
+                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                    document.getElementById('auth-status').textContent = 'Erreur: Configuration Firebase manquante. La sauvegarde Cloud est désactivée.';
+                    console.error("Firebase config is missing or empty.");
+                    // Laissez isAuthReady à false pour empêcher les appels à Firestore
+                    return; 
+                }
+                // ---------------------------------------------
+                
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                window.onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        document.getElementById('auth-status').textContent = 'Connecté (Gestion Cloud)';
+                        document.getElementById('user-id').textContent = currentUserId;
+                        isAuthReady = true;
+
+                        // 3. Lancer les écouteurs de données
+                        initializeDataListeners();
+                    } else {
+                        document.getElementById('auth-status').textContent = 'Déconnecté (Erreur)';
                     }
-                    if (num < 80) { return 'soixante-' + convert(num - 60); }
-                    if (num < 90) { return 'quatre-vingt' + (num > 80 ? ('-' + convert(num - 80)) : ''); }
-                    if (num < 100) { return 'quatre-vingt-dix-' + convert(num - 90); }
-                    if (num < 200) { return 'cent' + (num > 100 ? ' ' + convert(num - 100) : ''); }
-                    if (num < 1000) {
-                       let cent = Math.floor(num / 100);
-                       let reste = num % 100;
-                       let res = units[cent] + (cent > 1 && reste === 0 ? ' cents' : ' cent');
-                       return res + (reste > 0 ? ' ' + convert(reste) : '');
-                    }
-                    if (num < 1000000) {
-                        let mille = Math.floor(num / 1000);
-                        let reste = num % 1000;
-                        let res = (mille > 1 ? convert(mille) + ' mille' : 'mille');
-                        return res + (reste > 0 ? ' ' + convert(reste) : '');
-                    }
-                    return '';
+                });
+
+            } catch (error) {
+                console.error("Erreur d'initialisation Firebase:", error);
+                document.getElementById('auth-status').textContent = 'Échec de la connexion.';
+            }
+        }
+
+        // 2.2 Écouteurs en temps réel (Owner et Properties)
+        function initializeDataListeners() {
+            // Écouteur pour les informations du propriétaire
+            const ownerRef = getOwnerDocRef();
+            onSnapshot(ownerRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    inputs.propNom.value = data.nom || '';
+                    inputs.propContact.value = data.contact || '';
+                    updatePreview(); // Mise à jour de l'aperçu avec les infos du propriétaire
+                } else {
+                    // Si le document propriétaire n'existe pas, l'initialiser
+                    saveOwnerData(initialOwnerData);
+                }
+            }, (error) => console.error("Erreur lecture propriétaire:", error));
+
+
+            // Écouteur pour les propriétés
+            const propertiesRef = getUserPropertiesCollectionRef();
+            onSnapshot(propertiesRef, async (snapshot) => {
+                if (snapshot.empty && isAuthReady) {
+                    // Si la collection est vide, la remplir avec les données initiales
+                    await initializePropertiesData();
+                    return;
                 }
                 
-                // Fonction pour traiter le total (simple pour l'exemple)
-                let euroText = convert(euros).trim() + (euros > 1 ? ' Euros' : ' Euro');
-                let centimeText = centimes > 0 ? (centimes > 1 ? ' et ' + convert(centimes) + ' centimes' : ' et un centime') : '';
-                let result = euroText + centimeText;
-                return result.charAt(0).toUpperCase() + result.slice(1);
-            }
-            
-            // 3. Fonction principale de mise à jour de l'aperçu
-            function updatePreview() {
-                const loyer = parseFloat(inputs.loyer.value) || 0;
-                const charges = parseFloat(inputs.charges.value) || 0;
-                const total = loyer + charges;
-                
-                // Calcul et affichage de la période complète (du 01 au dernier jour du mois)
-                const periodeValue = inputs.periode.value;
-                const [year, month] = periodeValue.split('-');
-                const startDate = `01-${month}-${year}`;
-                const lastDay = new Date(year, month, 0).getDate();
-                const endDate = `${lastDay}-${month}-${year}`;
+                currentProperties = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                populatePropertySelector();
 
-                // Mise à jour des blocs d'information
-                previews.propNom.textContent = inputs.propNom.value;
-                previews.propContact.textContent = inputs.propContact.value;
-                previews.locNom.textContent = inputs.locNom.value;
-                previews.locEmail.textContent = inputs.locEmail.value; // NOUVEAU
-                previews.locAdresse.textContent = inputs.locAdresse.value;
-                previews.periode.textContent = `du ${startDate} au ${endDate}`;
-                
-                // Mise à jour du texte principal
-                previews.propNomText.textContent = inputs.propNom.value;
-                previews.locAdresseText.textContent = inputs.locAdresse.value;
-                previews.locNomText.textContent = inputs.locNom.value;
-                
-                // Mise à jour des montants formatés en Euro
-                previews.loyer.textContent = `${loyer.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
-                previews.charges.textContent = `${charges.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
-                previews.total.textContent = `${total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
-                
-                // Mise à jour du total en toutes lettres
-                previews.totalText.textContent = numberToWordsFrench(total);
-
-                // Mise à jour de la date d'émission (format jj-mm-aaaa)
-                const dateEmissionValue = inputs.dateEmission.value;
-                if(dateEmissionValue) {
-                    const [y, m, d] = dateEmissionValue.split('-');
-                    previews.dateEmission.textContent = `${d}-${m}-${y}`;
+                // Tenter de recharger la propriété précédemment sélectionnée, sinon la première
+                const selectedIndex = inputs.propertySelector.value || '0';
+                if (currentProperties.length > 0 && selectedIndex) {
+                    loadPropertyData(selectedIndex);
+                } else {
+                    // Si aucune propriété, vider les champs
+                    clearForm();
                 }
 
-                previews.signature.textContent = inputs.propNom.value;
+                // Activer ou désactiver le bouton de suppression
+                inputs.deleteBtn.disabled = currentProperties.length === 0;
+
+            }, (error) => console.error("Erreur lecture propriétés:", error));
+        }
+
+        // 2.3 Initialisation et Sauvegarde
+        async function initializePropertiesData() {
+            if (!isAuthReady) return;
+            inputs.actionMessage.textContent = "Initialisation des données de base...";
+
+            const batch = [];
+            initialPropertiesData.forEach((prop, index) => {
+                // Utiliser un ID séquentiel pour la première fois pour l'exemple
+                const docRef = doc(getUserPropertiesCollectionRef(), `prop${index + 1}`);
+                batch.push(setDoc(docRef, prop));
+            });
+
+            try {
+                await Promise.all(batch);
+                inputs.actionMessage.textContent = "Données de base chargées !";
+            } catch (error) {
+                console.error("Erreur d'initialisation des biens:", error);
+                inputs.actionMessage.textContent = "Erreur lors du chargement initial.";
+            }
+        }
+
+        async function saveOwnerData(data) {
+            if (!isAuthReady) return;
+            try {
+                await setDoc(getOwnerDocRef(), data);
+            } catch (error) {
+                console.error("Erreur lors de la sauvegarde du propriétaire:", error);
+            }
+        }
+        
+        async function savePropertyData(isNew = false) {
+            if (!isAuthReady) {
+                inputs.actionMessage.textContent = "Erreur: Connexion Cloud non établie. Impossible de sauvegarder.";
+                return;
+            }
+            inputs.actionMessage.textContent = "Sauvegarde en cours...";
+            
+            // 1. Sauvegarde des infos Propriétaire (elles sont dans le même formulaire)
+            await saveOwnerData({
+                nom: inputs.propNom.value,
+                contact: inputs.propContact.value
+            });
+
+            // 2. Sauvegarde des infos du Bien
+            const selectedIndex = inputs.propertySelector.value;
+            // Utilise un ID existant si non nouveau, sinon crée un UUID
+            const currentPropId = (isNew || !inputs.propertySelector.value) ? window.crypto.randomUUID() : currentProperties[selectedIndex].id;
+            
+            const propertyData = {
+                locataire: inputs.locNom.value,
+                email: inputs.locEmail.value,
+                adresse: inputs.locAdresse.value,
+                loyer_hc: parseFloat(inputs.loyer.value) || 0,
+                charges: parseFloat(inputs.charges.value) || 0
+            };
+            
+            try {
+                const docRef = doc(getUserPropertiesCollectionRef(), currentPropId);
+                await setDoc(docRef, propertyData, { merge: false });
                 
-                // Mise à jour du graphique
-                updateChart(loyer, charges);
+                inputs.actionMessage.textContent = "Bien sauvegardé avec succès !";
+            } catch (error) {
+                console.error("Erreur lors de la sauvegarde du bien:", error);
+                inputs.actionMessage.textContent = "Erreur de sauvegarde.";
+            }
+        }
+
+        async function deleteSelectedProperty() {
+            if (!isAuthReady || currentProperties.length === 0) return;
+            
+            inputs.actionMessage.textContent = "Suppression en cours...";
+
+            const selectedIndex = inputs.propertySelector.value;
+            const propertyToDelete = currentProperties[selectedIndex];
+            
+            if (!propertyToDelete || !propertyToDelete.id) {
+                inputs.actionMessage.textContent = "Erreur: Bien introuvable.";
+                return;
+            }
+
+            try {
+                const docRef = doc(getUserPropertiesCollectionRef(), propertyToDelete.id);
+                await deleteDoc(docRef);
+                inputs.actionMessage.textContent = "Bien supprimé !";
+
+                // L'onSnapshot rechargera les données et mettra à jour le sélecteur
+            } catch (error) {
+                console.error("Erreur lors de la suppression du bien:", error);
+                inputs.actionMessage.textContent = "Erreur lors de la suppression.";
+            }
+        }
+
+        // **********************************************************
+        // ** 3. LOGIQUE D'INTERFACE ET DE PRÉVISUALISATION        **
+        // **********************************************************
+
+        // Fonction pour remplir le menu déroulant
+        function populatePropertySelector() {
+            inputs.propertySelector.innerHTML = '';
+            
+            if (currentProperties.length === 0) {
+                 const option = document.createElement('option');
+                 option.value = '';
+                 option.textContent = "--- Aucune propriété ---";
+                 inputs.propertySelector.appendChild(option);
+                 inputs.deleteBtn.disabled = true;
+                 return;
+            }
+
+            currentProperties.forEach((prop, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                // Affichage Locataire et Adresse pour une identification claire
+                option.textContent = `${prop.locataire} - ${prop.adresse}`; 
+                inputs.propertySelector.appendChild(option);
+            });
+            inputs.deleteBtn.disabled = false;
+        }
+
+        // Fonction pour charger les données d'un bien sélectionné
+        function loadPropertyData(selectedIndex) {
+            const index = parseInt(selectedIndex);
+            const prop = currentProperties[index];
+
+            if (prop) {
+                // Mettre à jour les champs Locataire et Montants
+                inputs.locNom.value = prop.locataire || '';
+                inputs.locEmail.value = prop.email || '';
+                inputs.locAdresse.value = prop.adresse || '';
+                inputs.loyer.value = prop.loyer_hc ? prop.loyer_hc.toFixed(2) : '0.00';
+                inputs.charges.value = prop.charges ? prop.charges.toFixed(2) : '0.00';
+            }
+            // Déclenche la mise à jour de l'aperçu
+            updatePreview();
+        }
+        
+        // Vider les champs pour l'ajout d'un nouveau bien
+        function clearForm() {
+            inputs.locNom.value = "Nouveau Locataire";
+            inputs.locEmail.value = "";
+            inputs.locAdresse.value = "Nouvelle Adresse";
+            inputs.loyer.value = "0.00";
+            inputs.charges.value = "0.00";
+            inputs.propertySelector.value = ''; // Désélectionne l'option
+            inputs.deleteBtn.disabled = true;
+            inputs.actionMessage.textContent = "Saisissez les données et cliquez sur 'Sauvegarder'.";
+            updatePreview();
+        }
+
+        // Fonction de conversion de nombre à toutes lettres (Français)
+        function numberToWordsFrench(n) {
+            if (n === 0) return 'Zéro Euro';
+            const s = n.toString();
+            let part = s.split('.');
+            let euros = parseInt(part[0]);
+            let centimes = part.length > 1 ? parseInt(part[1].padEnd(2, '0')) : 0;
+
+            const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+            const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+            const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+
+            function convert(num) {
+                if (num < 10) return units[num];
+                if (num < 20) return teens[num - 10];
+                if (num < 70) {
+                    let ten = Math.floor(num / 10);
+                    let unit = num % 10;
+                    if (ten === 6 && unit <= 9) { return 'soixante-' + convert(num - 60); }
+                    return tens[ten] + (unit > 0 ? (unit === 1 && ten === 7 || ten === 9 ? '-et-' : '-') + units[unit] : '');
+                }
+                if (num < 80) { return 'soixante-' + convert(num - 60); }
+                if (num < 90) { return 'quatre-vingt' + (num > 80 ? ('-' + convert(num - 80)) : ''); }
+                if (num < 100) { return 'quatre-vingt-dix-' + convert(num - 90); }
+                if (num < 200) { return 'cent' + (num > 100 ? ' ' + convert(num - 100) : ''); }
+                if (num < 1000) {
+                   let cent = Math.floor(num / 100);
+                   let reste = num % 100;
+                   let res = units[cent] + (cent > 1 && reste === 0 ? ' cents' : ' cent');
+                   return res + (reste > 0 ? ' ' + convert(reste) : '');
+                }
+                if (num < 1000000) {
+                    let mille = Math.floor(num / 1000);
+                    let reste = num % 1000;
+                    let res = (mille > 1 ? convert(mille) + ' mille' : 'mille');
+                    return res + (reste > 0 ? ' ' + convert(reste) : '');
+                }
+                return '';
             }
             
-            // 4. Initialisation du graphique Chart.js
-            function initChart() {
-                const ctx = document.getElementById('repartitionChart').getContext('2d');
-                repartitionChart = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Loyer', 'Charges'],
-                        datasets: [{
-                            data: [0, 0],
-                            backgroundColor: ['#10b981', '#f5a623'], /* Vert forêt pour Loyer, Orange pour Charges */
-                            borderColor: '#ffffff',
-                            borderWidth: 4,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false, /* Nécessaire pour respecter le conteneur */
-                        cutout: '70%',
-                        plugins: {
-                            legend: { position: 'bottom' },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.label || '';
-                                        if (context.parsed !== null) {
-                                            label += ': ' + context.parsed.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
-                                        }
-                                        return label;
+            // Fonction pour traiter le total (simple pour l'exemple)
+            let euroText = convert(euros).trim() + (euros > 1 ? ' Euros' : ' Euro');
+            let centimeText = centimes > 0 ? (centimes > 1 ? ' et ' + convert(centimes) + ' centimes' : ' et un centime') : '';
+            let result = euroText + centimeText;
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        }
+        
+        // Fonction principale de mise à jour de l'aperçu
+        function updatePreview() {
+            const loyer = parseFloat(inputs.loyer.value) || 0;
+            const charges = parseFloat(inputs.charges.value) || 0;
+            const total = loyer + charges;
+            
+            // Calcul et affichage de la période complète (du 01 au dernier jour du mois)
+            const periodeValue = inputs.periode.value;
+            const [year, month] = periodeValue.split('-');
+            const startDate = `01-${month}-${year}`;
+            const lastDay = new Date(year, month, 0).getDate();
+            const endDate = `${lastDay}-${month}-${year}`;
+
+            // Mise à jour des blocs d'information
+            previews.propNom.textContent = inputs.propNom.value;
+            previews.propContact.textContent = inputs.propContact.value;
+            previews.locNom.textContent = inputs.locNom.value;
+            previews.locEmail.textContent = inputs.locEmail.value; 
+            previews.locAdresse.textContent = inputs.locAdresse.value;
+            previews.periode.textContent = `du ${startDate} au ${endDate}`;
+            
+            // Mise à jour du texte principal
+            previews.propNomText.textContent = inputs.propNom.value;
+            previews.locAdresseText.textContent = inputs.locAdresse.value;
+            previews.locNomText.textContent = inputs.locNom.value;
+            
+            // Mise à jour des montants formatés en Euro
+            previews.loyer.textContent = `${loyer.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+            previews.charges.textContent = `${charges.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+            previews.total.textContent = `${total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+            
+            // Mise à jour du total en toutes lettres
+            previews.totalText.textContent = numberToWordsFrench(total);
+
+            // Mise à jour de la date d'émission (format jj-mm-aaaa)
+            const dateEmissionValue = inputs.dateEmission.value;
+            if(dateEmissionValue) {
+                const [y, m, d] = dateEmissionValue.split('-');
+                previews.dateEmission.textContent = `${d}-${m}-${y}`;
+            }
+
+            previews.signature.textContent = inputs.propNom.value;
+            
+            // Mise à jour du graphique
+            updateChart(loyer, charges);
+        }
+        
+        // Initialisation du graphique Chart.js
+        function initChart() {
+            const ctx = document.getElementById('repartitionChart').getContext('2d');
+            repartitionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Loyer', 'Charges'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#10b981', '#f5a623'], /* Vert forêt pour Loyer, Orange pour Charges */
+                        borderColor: '#ffffff',
+                        borderWidth: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, /* Nécessaire pour respecter le conteneur */
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (context.parsed !== null) {
+                                        label += ': ' + context.parsed.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
                                     }
+                                    return label;
                                 }
                             }
                         }
                     }
-                });
-            }
-
-            // 5. Mise à jour du graphique avec les nouvelles valeurs
-            function updateChart(loyer, charges) {
-                if (repartitionChart) {
-                    repartitionChart.data.datasets[0].data = [loyer, charges];
-                    repartitionChart.update();
                 }
+            });
+        }
+
+        // Mise à jour du graphique avec les nouvelles valeurs
+        function updateChart(loyer, charges) {
+            if (repartitionChart) {
+                repartitionChart.data.datasets[0].data = [loyer, charges];
+                repartitionChart.update();
+            }
+        }
+
+        // Fonction d'envoi d'e-mail (génère le lien mailto)
+        function sendEmail() {
+            const locataire = inputs.locNom.value;
+            const email = inputs.locEmail.value;
+            const periode = previews.periode.textContent;
+            const total = previews.total.textContent;
+            const dateEmission = previews.dateEmission.textContent;
+            const propNom = inputs.propNom.value;
+
+            if (!email) {
+                // Utilisation de la zone de message pour l'utilisateur
+                inputs.actionMessage.textContent = 'Erreur: Veuillez entrer l\'adresse e-mail du locataire.';
+                return;
             }
 
-            // 6. Initialisation de la date d'émission à la date du jour
+            const subject = encodeURIComponent(`Quittance de loyer ${periode}`);
+            
+            let body = `Bonjour ${locataire},\n\n`;
+            body += `Veuillez trouver ci-joint la quittance de loyer pour la période ${periode}.\n\n`;
+            body += `Montant total payé : ${total}.\n`;
+            body += `Date d'émission : ${dateEmission}.\n\n`;
+            body += `Ceci confirme le règlement de votre loyer et des charges.\n\n`;
+            body += `Cordialement,\n${propNom}`;
+
+            const mailtoLink = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(body)}`;
+            
+            // Ouvre le client de messagerie
+            window.location.href = mailtoLink;
+        }
+
+
+        // 4. Initialisation et écouteurs finaux
+        
+        function initializeApp() {
+            // Initialisation de la date d'émission à la date du jour
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             inputs.dateEmission.value = `${yyyy}-${mm}-${dd}`;
 
-            // 7. Fonction d'envoi d'e-mail (génère le lien mailto)
-            function sendEmail() {
-                const locataire = inputs.locNom.value;
-                const email = inputs.locEmail.value;
-                const periode = previews.periode.textContent;
-                const total = previews.total.textContent;
-                const dateEmission = previews.dateEmission.textContent;
-                const propNom = inputs.propNom.value;
-
-                if (!email) {
-                    alert('Veuillez entrer l\'adresse e-mail du locataire pour utiliser cette fonctionnalité.');
-                    return;
-                }
-
-                const subject = encodeURIComponent(`Quittance de loyer ${periode}`);
-                
-                // Corps du message incluant les informations principales
-                let body = `Bonjour ${locataire},\n\n`;
-                body += `Veuillez trouver ci-joint la quittance de loyer pour la période ${periode}.\n\n`;
-                body += `Montant total payé : ${total}.\n`;
-                body += `Date d'émission : ${dateEmission}.\n\n`;
-                body += `Ceci confirme le règlement de votre loyer et des charges.\n\n`;
-                body += `Cordialement,\n${propNom}`;
-
-                const mailtoLink = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(body)}`;
-                
-                // Ouvre le client de messagerie
-                window.location.href = mailtoLink;
-                
-                // NOTE IMPORTANTE : Le corps du message ne peut pas inclure le PDF lui-même. 
-                // Pour joindre le PDF, l'utilisateur devra l'enregistrer manuellement (via Imprimer > PDF) 
-                // et l'ajouter à l'e-mail qui vient d'être ouvert.
-            }
-
-
-            // 8. Ajout des écouteurs d'événements à tous les champs
-            Object.values(inputs).forEach(input => {
+            // Écouteurs pour la mise à jour des champs (Locataire/Loyer/Charges)
+            const manualInputs = [inputs.periode, inputs.dateEmission, inputs.loyer, inputs.charges, inputs.locNom, inputs.locEmail, inputs.locAdresse, inputs.propNom, inputs.propContact];
+            manualInputs.forEach(input => {
                 input.addEventListener('keyup', updatePreview);
                 input.addEventListener('change', updatePreview);
             });
-
-            // 9. Gestion du bouton d'impression et du nouveau bouton E-mail
-            document.getElementById('print-btn').addEventListener('click', () => {
-                window.print();
+            
+            // Événements du sélecteur et des boutons de gestion
+            inputs.propertySelector.addEventListener('change', (e) => loadPropertyData(e.target.value));
+            inputs.saveBtn.addEventListener('click', () => {
+                const isNew = !inputs.propertySelector.value || currentProperties.length === 0; // Si vide ou non sélectionné, c'est un nouveau
+                savePropertyData(isNew);
             });
+            inputs.deleteBtn.addEventListener('click', deleteSelectedProperty);
+            inputs.addNewBtn.addEventListener('click', clearForm);
+
+            // Boutons de Quittance
+            document.getElementById('print-btn').addEventListener('click', () => { window.print(); });
             document.getElementById('email-btn').addEventListener('click', sendEmail);
             
-            // Initialisation au chargement
             initChart();
-            updatePreview();
+            updatePreview(); // Mise à jour initiale
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+             // Démarrer l'initialisation de Firebase et de l'application
+             initializeFirebase();
+             initializeApp();
         });
     </script>
 </body>
