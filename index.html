@@ -33,6 +33,9 @@
         window.getDocs = getDocs;
         window.deleteDoc = deleteDoc;
         window.setLogLevel = setLogLevel;
+        
+        // Indicateur global pour vérifier si Firebase est chargé
+        window.firebaseModuleLoaded = true;
     </script>
     
     <style>
@@ -452,6 +455,12 @@
 
         // 2.1 Authentification et Initialisation
         async function initializeFirebase() {
+            
+            // Si le module Firebase n'est pas chargé (ce qui est peu probable ici mais sécurise le code)
+            if (typeof window.initializeApp === 'undefined') {
+                document.getElementById('auth-status').textContent = 'Erreur: Le script Firebase est manquant. Cloud désactivé.';
+                return;
+            }
             
             try {
                 // setLogLevel('debug'); // Décommenter pour déboguer Firebase
@@ -1002,7 +1011,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
              // Vérifie si les fonctions Firebase sont disponibles avant d'appeler initializeFirebase
-             if (typeof window.initializeApp !== 'undefined') {
+             if (typeof window.initializeApp !== 'undefined' && window.firebaseModuleLoaded) {
                 initializeFirebase();
              } else {
                  // Si le script de module n'a pas chargé les fonctions, affiche une erreur non bloquante.
