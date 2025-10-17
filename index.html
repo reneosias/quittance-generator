@@ -42,12 +42,34 @@
             cursor: pointer; 
             transition: background-color 0.2s, box-shadow 0.2s;
         }
+        /* Style des boutons d'action */
         .btn-primary { 
             background-color: #4a90e2; /* Bleu d'origine */
             color: white; 
             box-shadow: 0 4px 6px -1px rgba(74, 144, 226, 0.4); 
         }
         .btn-primary:hover { background-color: #3a7fd0; }
+
+        .btn-green {
+            background-color: #10b981;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+        }
+        .btn-green:hover { background-color: #059669; }
+
+        .btn-yellow {
+            background-color: #f59e0b;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.4);
+        }
+        .btn-yellow:hover { background-color: #d97706; }
+
+        .btn-red {
+            background-color: #ef4444;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.4);
+        }
+        .btn-red:hover { background-color: #dc2626; }
         
         /* Conteneur pour le graphique */
         .chart-container {
@@ -81,7 +103,7 @@
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 no-print">
             <h1 class="text-3xl font-bold text-gray-900">Générateur de Quittance Multi-Propriété</h1>
-            <p class="text-gray-600 mt-1">Gérez jusqu'à trois biens pour vos quittances de loyer.</p>
+            <p class="text-gray-600 mt-1">Gérez vos biens et générez des quittances personnalisées.</p>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -90,15 +112,16 @@
             <div class="space-y-8 no-print">
                 
                 <section class="card">
-                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Sélection de la Propriété</h2>
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Sélection & Gestion de la Propriété</h2>
                     <label for="property-selector" class="form-label">Propriété :</label>
                     <select id="property-selector" class="form-select mb-4"></select>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <button id="add-new-btn" class="btn btn-primary bg-green-500 hover:bg-green-600">Nouveau Bien</button>
-                        <button id="save-btn" class="btn btn-primary bg-yellow-500 hover:bg-yellow-600">Enregistrer les Modifs</button>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button id="add-new-btn" class="btn btn-green">Nouveau Bien</button>
+                        <button id="save-btn" class="btn btn-yellow">Enregistrer les Modifs</button>
+                        <button id="delete-btn" class="btn btn-red" disabled>Supprimer ce Bien</button>
                     </div>
-                    <p id="action-message" class="text-sm mt-3 text-center text-gray-500"></p>
+                    <p id="action-message" class="text-sm mt-3 text-center font-medium text-gray-500"></p>
                 </section>
 
                 <section class="card">
@@ -259,10 +282,11 @@
             propContact: document.getElementById('prop-contact'),
             locNom: document.getElementById('loc-nom'),
             locAdresse: document.getElementById('loc-adresse'),
-            locEmail: document.getElementById('loc-email'), // NOUVEAU
-            locTel: document.getElementById('loc-tel'),     // NOUVEAU
+            locEmail: document.getElementById('loc-email'), 
+            locTel: document.getElementById('loc-tel'),     
             saveBtn: document.getElementById('save-btn'),
             addNewBtn: document.getElementById('add-new-btn'),
+            deleteBtn: document.getElementById('delete-btn'), // AJOUTÉ
             actionMessage: document.getElementById('action-message'),
         };
 
@@ -271,8 +295,8 @@
             propContact: document.getElementById('preview-prop-contact'),
             locNom: document.getElementById('preview-loc-nom'),
             locAdresse: document.getElementById('preview-loc-adresse'),
-            locEmail: document.getElementById('preview-loc-email'), // NOUVEAU
-            locTel: document.getElementById('preview-loc-tel'),     // NOUVEAU
+            locEmail: document.getElementById('preview-loc-email'), 
+            locTel: document.getElementById('preview-loc-tel'),     
             periode: document.getElementById('preview-periode'),
             propNomText: document.getElementById('preview-prop-nom-text'),
             locAdresseText: document.getElementById('preview-loc-adresse-text'),
@@ -297,6 +321,7 @@
                  option.textContent = "--- Ajouter une propriété ---";
                  inputs.propertySelector.appendChild(option);
                  clearForm();
+                 inputs.deleteBtn.disabled = true; // Désactive la suppression si la liste est vide
                  return;
             }
 
@@ -310,6 +335,7 @@
             // Sélectionne le dernier élément enregistré ou le premier
             inputs.propertySelector.value = Math.min(selectedIndex, propertiesData.length - 1); 
             loadPropertyData(inputs.propertySelector.value);
+            inputs.deleteBtn.disabled = false; // Active la suppression si des éléments existent
         }
 
         // Fonction pour charger les données d'un bien sélectionné
@@ -338,6 +364,7 @@
             inputs.charges.value = "0.00";
             inputs.propertySelector.value = -1; 
             inputs.actionMessage.textContent = "Saisissez les données du nouveau bien et cliquez sur 'Enregistrer les Modifs'.";
+            inputs.deleteBtn.disabled = true; // Désactive la suppression lors de la création
             updatePreview();
         }
 
@@ -345,6 +372,12 @@
         function savePropertyData() {
             const selectedIndex = inputs.propertySelector.value;
             
+            // Validation simple pour ne pas enregistrer un bien vide
+            if (inputs.locNom.value === "" || inputs.locAdresse.value === "") {
+                inputs.actionMessage.textContent = "Veuillez remplir au moins le Nom du Locataire et l'Adresse.";
+                return;
+            }
+
             const propertyData = {
                 locataire: inputs.locNom.value,
                 email: inputs.locEmail.value,
@@ -369,6 +402,26 @@
             }
             saveLocalData();
         }
+
+        // NOUVEAU: Fonction pour supprimer le bien sélectionné
+        function deleteSelectedProperty() {
+            const selectedIndex = inputs.propertySelector.value;
+            
+            if (selectedIndex === null || selectedIndex === "" || selectedIndex === '-1' || selectedIndex >= propertiesData.length) {
+                inputs.actionMessage.textContent = "Aucun bien sélectionné à supprimer.";
+                return;
+            }
+
+            // Simuler une confirmation (dans un environnement réel, on utiliserait une modale)
+            const confirmDelete = true; 
+            if (confirmDelete) {
+                propertiesData.splice(selectedIndex, 1); // Supprime l'élément du tableau
+                saveLocalData(); // Sauvegarde le tableau mis à jour
+                inputs.actionMessage.textContent = "Bien supprimé avec succès.";
+                populatePropertySelector(0); // Recharge la liste et sélectionne le premier élément
+            }
+        }
+
 
         // Fonction de conversion de nombre à toutes lettres (Français)
         function numberToWordsFrench(n) {
@@ -433,8 +486,8 @@
             previews.propContact.textContent = inputs.propContact.value;
             previews.locNom.textContent = inputs.locNom.value;
             previews.locAdresse.textContent = inputs.locAdresse.value;
-            previews.locEmail.textContent = inputs.locEmail.value; // NOUVEAU
-            previews.locTel.textContent = inputs.locTel.value;     // NOUVEAU
+            previews.locEmail.textContent = inputs.locEmail.value; 
+            previews.locTel.textContent = inputs.locTel.value;     
             previews.periode.textContent = `du ${startDate} au ${endDate}`;
             
             previews.propNomText.textContent = inputs.propNom.value;
@@ -521,6 +574,7 @@
             inputs.propertySelector.addEventListener('change', (e) => loadPropertyData(e.target.value));
             inputs.saveBtn.addEventListener('click', savePropertyData);
             inputs.addNewBtn.addEventListener('click', clearForm);
+            inputs.deleteBtn.addEventListener('click', deleteSelectedProperty); // AJOUTÉ
 
             // Bouton d'impression
             document.getElementById('print-btn').addEventListener('click', () => { window.print(); });
