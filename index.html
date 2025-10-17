@@ -83,6 +83,20 @@
             box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4); 
         }
         .btn-blue:hover { background-color: #2563eb; }
+        .btn-tab {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .btn-tab.active {
+            background-color: #10b981;
+            color: white;
+        }
+        .btn-tab:not(.active):hover {
+            background-color: #e5e7eb;
+        }
         
         /* Conteneur pour le graphique (essentiel pour la réactivité de Chart.js) */
         .chart-container {
@@ -122,85 +136,153 @@
             <div id="user-info" class="mt-1 text-xs text-gray-400">ID Utilisateur: <span id="user-id">N/A</span></div>
         </header>
 
+        <!-- NOUVEAU: Onglets de navigation -->
+        <nav class="flex justify-center space-x-2 mb-8 no-print p-2 rounded-lg bg-white shadow">
+            <button id="tab-quittance-btn" data-tab="quittance" class="btn-tab active">1. Quittance & Saisie</button>
+            <button id="tab-suivi-btn" data-tab="suivi" class="btn-tab">2. Suivi Financier</button>
+        </nav>
+
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- VOLET GAUCHE : FORMULAIRE D'ÉDITION (Masqué à l'impression grâce à la classe 'no-print') -->
+            
+            <!-- VOLET GAUCHE : FORMULAIRE D'ÉDITION (Partie commune pour le Cloud) -->
             <div class="space-y-8 no-print">
                 <section class="card">
                     <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Sélection et Gestion des Biens</h2>
                     <label for="property-selector" class="form-label text-xl font-bold">Choisir la Propriété :</label>
                     <select id="property-selector" class="form-select mb-4"></select>
 
-                    <!-- Bouton pour créer une nouvelle propriété -->
                     <button id="add-new-btn" class="btn btn-blue w-full">Ajouter une Nouvelle Propriété</button>
                     
                     <div id="action-message" class="text-sm mt-3 text-center font-medium"></div>
 
                 </section>
 
-                <section class="card">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Paramètres de la Quittance</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="periode" class="form-label">Période (Mois)</label>
-                            <input type="month" id="periode" class="form-input" value="2025-09">
+                <!-- CONTENU DE L'ONGLET 1 : QUITTANCE & SAISIE -->
+                <div id="tab-content-quittance">
+                    <section class="card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Paramètres de la Quittance</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="periode" class="form-label">Période (Mois)</label>
+                                <input type="month" id="periode" class="form-input" value="2025-09">
+                            </div>
+                            <div>
+                                <label for="date-emission" class="form-label">Date d'émission</label>
+                                <input type="date" id="date-emission" class="form-input">
+                            </div>
+                            <div>
+                                <label for="loyer" class="form-label">Loyer Hors Charges (€)</label>
+                                <input type="number" id="loyer" class="form-input" value="0.00" step="0.01">
+                            </div>
+                            <div>
+                                <label for="charges" class="form-label">Charges (€)</label>
+                                <input type="number" id="charges" class="form-input" value="0.00" step="0.01">
+                            </div>
                         </div>
-                        <div>
-                            <label for="date-emission" class="form-label">Date d'émission</label>
-                            <input type="date" id="date-emission" class="form-input">
-                        </div>
-                        <div>
-                            <label for="loyer" class="form-label">Loyer Hors Charges (€)</label>
-                            <input type="number" id="loyer" class="form-input" value="0.00" step="0.01">
-                        </div>
-                        <div>
-                            <label for="charges" class="form-label">Charges (€)</label>
-                            <input type="number" id="charges" class="form-input" value="0.00" step="0.01">
-                        </div>
-                    </div>
-                </section>
+                    </section>
 
-                <section class="card">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Parties (Sauvegardées)</h2>
-                     <div class="space-y-6">
-                        <!-- Infos Propriétaire (MODIFIABLE et SAUVEGARDABLE) -->
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2 text-gray-700">Propriétaire</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label for="prop-nom" class="form-label">Nom</label><input type="text" id="prop-nom" class="form-input"></div>
-                                <div><label for="prop-contact" class="form-label">Contact</label><input type="text" id="prop-contact" class="form-input"></div>
+                    <section class="card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Parties (Sauvegardées)</h2>
+                        <div class="space-y-6">
+                            <!-- Infos Propriétaire (MODIFIABLE et SAUVEGARDABLE) -->
+                            <div>
+                                <h3 class="text-lg font-semibold mb-2 text-gray-700">Propriétaire</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label for="prop-nom" class="form-label">Nom</label><input type="text" id="prop-nom" class="form-input"></div>
+                                    <div><label for="prop-contact" class="form-label">Contact</label><input type="text" id="prop-contact" class="form-input"></div>
+                                </div>
+                            </div>
+                            <!-- Infos Locataire (MODIFIABLE et SAUVEGARDABLE) -->
+                            <div>
+                                <h3 class="text-lg font-semibold mb-2 text-gray-700">Locataire</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="col-span-3 md:col-span-1"><label for="loc-nom" class="form-label">Nom Locataire</label><input type="text" id="loc-nom" class="form-input" value=""></div>
+                                    <div class="col-span-3 md:col-span-1"><label for="loc-email" class="form-label">E-mail Locataire</label><input type="email" id="loc-email" class="form-input" placeholder="exemple@locataire.com" value=""></div>
+                                    <div class="col-span-3 md:col-span-1"><label for="loc-adresse" class="form-label">Adresse du logement</label><input type="text" id="loc-adresse" class="form-input" value=""></div>
+                                </div>
                             </div>
                         </div>
-                        <!-- Infos Locataire (MODIFIABLE et SAUVEGARDABLE) -->
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2 text-gray-700">Locataire</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="col-span-3 md:col-span-1"><label for="loc-nom" class="form-label">Nom Locataire</label><input type="text" id="loc-nom" class="form-input" value=""></div>
-                                <div class="col-span-3 md:col-span-1"><label for="loc-email" class="form-label">E-mail Locataire</label><input type="email" id="loc-email" class="form-input" placeholder="exemple@locataire.com" value=""></div>
-                                <div class="col-span-3 md:col-span-1"><label for="loc-adresse" class="form-label">Adresse du logement</label><input type="text" id="loc-adresse" class="form-input" value=""></div>
-                            </div>
+                        
+                        <!-- Boutons de Sauvegarde et Suppression -->
+                        <div class="mt-6 grid grid-cols-2 gap-4">
+                            <button id="save-btn" class="btn btn-primary">Sauvegarder ce Bien</button>
+                            <button id="delete-btn" class="btn btn-secondary" disabled>Supprimer ce Bien</button>
                         </div>
-                    </div>
+
+                    </section>
                     
-                    <!-- Boutons de Sauvegarde et Suppression -->
-                    <div class="mt-6 grid grid-cols-2 gap-4">
-                        <button id="save-btn" class="btn btn-primary">Sauvegarder ce Bien</button>
-                        <button id="delete-btn" class="btn btn-secondary" disabled>Supprimer ce Bien</button>
-                    </div>
+                    <!-- Section de visualisation (Graphique de Loyer/Charges) -->
+                    <section class="card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Composition du Loyer</h2>
+                        <p class="text-gray-600 mb-4">Aperçu visuel de la répartition Loyer / Charges.</p>
+                        <div class="chart-container">
+                            <canvas id="repartitionChart"></canvas>
+                        </div>
+                    </section>
+                </div>
 
-                </section>
-                
-                <!-- Section de visualisation (Graphique) -->
-                <section class="card">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Composition du Loyer</h2>
-                    <p class="text-gray-600 mb-4">Aperçu visuel de la répartition Loyer / Charges.</p>
-                    <div class="chart-container">
-                        <canvas id="repartitionChart"></canvas>
-                    </div>
-                </section>
+                <!-- CONTENU DE L'ONGLET 2 : SUIVI FINANCIER -->
+                <div id="tab-content-suivi" class="hidden">
+                    <section class="card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Bénéfice Net Mensuel</h2>
+                        <p class="text-gray-600 mb-4">Évolution du Bénéfice Net (Loyer - Dépenses) sur l'année.</p>
+                        <div class="chart-container" style="height: 350px;">
+                            <canvas id="netBenefitChart"></canvas>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Synthèse Annuelle (Est.)</h2>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="p-3 font-semibold">DESCRIPTION</th>
+                                    <th class="p-3 font-semibold text-right">MONTANT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="p-3">Total des loyers perçus (Annuel)</td>
+                                    <td id="annual-rent" class="p-3 text-right font-medium text-green-700"></td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-3">Total des dépenses (Annuel)</td>
+                                    <td id="annual-expenses" class="p-3 text-right font-medium text-red-600"></td>
+                                </tr>
+                                <tr class="bg-green-50">
+                                    <td class="p-3 font-bold">Bénéfice net annuel</td>
+                                    <td id="annual-net" class="p-3 text-right font-bold text-green-900"></td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-3">Rentabilité brute (Est.)</td>
+                                    <td id="annual-profitability" class="p-3 text-right font-bold text-blue-600"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    
+                    <section class="card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Détail des flux mensuels (Exemple)</h2>
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="p-2 font-semibold">MOIS</th>
+                                    <th class="p-2 font-semibold text-right">LOYER</th>
+                                    <th class="p-2 font-semibold text-right">DÉPENSES</th>
+                                    <th class="p-2 font-semibold text-right">BÉNÉFICE NET</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthly-detail">
+                                <!-- Données insérées par JS -->
+                            </tbody>
+                        </table>
+                        <p class="text-xs text-gray-500 mt-4">*Ces données sont un exemple tiré de votre feuille de calcul et ne sont pas liées aux champs de quittance.</p>
+                    </section>
+                </div>
             </div>
 
-            <!-- VOLET DROIT : APERÇU DE LA QUITTANCE IMPRIMABLE -->
-            <div class="space-y-8">
+            <!-- VOLET DROIT : APERÇU DE LA QUITTANCE IMPRIMABLE (Reste affiché pour la quittance) -->
+            <div id="right-panel">
                  <section id="quittance-preview" class="card quittance-preview flex flex-col p-8 md:p-12">
                     <h2 class="text-3xl font-bold text-center mb-8 text-green-700">QUITTANCE DE LOYER</h2>
 
@@ -273,41 +355,36 @@
     <script>
         // Variables globales pour Firebase
         let db, auth, currentUserId, currentProperties = [];
-        let repartitionChart;
+        let repartitionChart, netBenefitChart; // Ajout du graphique de bénéfice net
         let isAuthReady = false;
 
-        // Données initiales (uniquement utilisées si la base est vide)
+        // Données INITIALES POUR LA QUITTANCE (Uniquement utilisées si la base est vide)
         const initialOwnerData = {
             nom: "René Osias ASSENDAHI",
             contact: "0668336085 / essonne1992@gmail.com"
         };
         const initialPropertiesData = [
-            {
-                id: 'prop1',
-                locataire: "SOLIHA SEINE ET MARNE",
-                email: "soliha.melun@example.com",
-                adresse: "76 rue dian fossey 77000 melun",
-                loyer_hc: 448.85,
-                charges: 91.00
-            },
-            {
-                id: 'prop2',
-                locataire: "Jean Dupont",
-                email: "jean.dupont@locataire.com",
-                adresse: "12 rue de Rivoli 75004 Paris",
-                loyer_hc: 850.00,
-                charges: 75.00
-            },
-            {
-                id: 'prop3',
-                locataire: "Marie Martin",
-                email: "marie.martin@locataire.com",
-                adresse: "25 quai Saint-Vincent 69001 Lyon",
-                loyer_hc: 620.00,
-                charges: 55.00
-            }
+            { id: 'prop1', locataire: "SOLIHA SEINE ET MARNE", email: "soliha.melun@example.com", adresse: "76 rue dian fossey 77000 melun", loyer_hc: 448.85, charges: 91.00 },
+            { id: 'prop2', locataire: "Jean Dupont", email: "jean.dupont@locataire.com", adresse: "12 rue de Rivoli 75004 Paris", loyer_hc: 850.00, charges: 75.00 },
+            { id: 'prop3', locataire: "Marie Martin", email: "marie.martin@locataire.com", adresse: "25 quai Saint-Vincent 69001 Lyon", loyer_hc: 620.00, charges: 55.00 }
         ];
-        
+
+        // NOUVEAU: Données du SUIVI FINANCIER (Extraites de votre Google Sheet - L'ID "prop1" est utilisé par défaut pour cette analyse)
+        const monthlyData = [
+            { mois: "JANVIER", loyer: 539.85, charges_copro: 233.90, taxe_fonciere: 64, impot: 39, credit: 363.93, total_depenses: 700.83, benefice_net: -160.98 },
+            { mois: "FÉVRIER", loyer: 539.85, charges_copro: 0, taxe_fonciere: 64, impot: 39, credit: 363.93, total_depenses: 466.93, benefice_net: 72.92 },
+            { mois: "MARS", loyer: 539.85, charges_copro: 0, taxe_fonciere: 64, impot: 39, credit: 363.93, total_depenses: 466.93, benefice_net: 72.92 },
+            { mois: "AVRIL", loyer: 539.85, charges_copro: 449.43, taxe_fonciere: 64, impot: 39, credit: 363.93, total_depenses: 916.36, benefice_net: -376.51 },
+            { mois: "MAI", loyer: 539.85, charges_copro: 0, taxe_fonciere: 64, impot: 39, credit: 363.93, total_depenses: 466.93, benefice_net: 72.92 },
+            { mois: "JUIN", loyer: 539.85, charges_copro: 91.00, taxe_fonciere: 64, impot: 39, credit: 363.93, total_depenses: 557.93, benefice_net: -18.08 },
+            { mois: "JUILLET", loyer: 539.85, charges_copro: 0, taxe_fonciere: 64, impot: 39, credit: 363.93, total_depenses: 466.93, benefice_net: 72.92 },
+            { mois: "AOÛT", loyer: 539.85, charges_copro: 91.00, taxe_fonciere: 64, impot: 0, credit: 363.93, total_depenses: 518.93, benefice_net: 20.92 }, // Note: Impôt 0 dans la source pour Août-Oct
+            { mois: "SEPTEMBRE", loyer: 539.85, charges_copro: 91.00, taxe_fonciere: 64, impot: 0, credit: 363.93, total_depenses: 518.93, benefice_net: 20.92 },
+            { mois: "OCTOBRE", loyer: 539.85, charges_copro: 91.00, taxe_fonciere: 64, impot: 0, credit: 363.93, total_depenses: 518.93, benefice_net: 20.92 },
+            { mois: "NOVEMBRE", loyer: 0, charges_copro: 0, taxe_fonciere: 0, impot: 0, credit: 0, total_depenses: 0, benefice_net: 0 },
+            { mois: "DÉCEMBRE", loyer: 0, charges_copro: 0, taxe_fonciere: 0, impot: 0, credit: 0, total_depenses: 0, benefice_net: 0 }
+        ];
+
         // 1. Récupération des éléments HTML (Inputs et Zones d'affichage)
         const inputs = {
             propertySelector: document.getElementById('property-selector'),
@@ -324,6 +401,11 @@
             deleteBtn: document.getElementById('delete-btn'),
             addNewBtn: document.getElementById('add-new-btn'),
             actionMessage: document.getElementById('action-message'),
+            // NOUVEAU: Onglets
+            tabQuittance: document.getElementById('tab-content-quittance'),
+            tabSuivi: document.getElementById('tab-content-suivi'),
+            tabQuittanceBtn: document.getElementById('tab-quittance-btn'),
+            tabSuiviBtn: document.getElementById('tab-suivi-btn'),
         };
 
         const previews = {
@@ -342,6 +424,12 @@
             total: document.getElementById('preview-total'),
             dateEmission: document.getElementById('preview-date-emission'),
             signature: document.getElementById('preview-signature'),
+            // NOUVEAU: Suivi
+            annualRent: document.getElementById('annual-rent'),
+            annualExpenses: document.getElementById('annual-expenses'),
+            annualNet: document.getElementById('annual-net'),
+            annualProfitability: document.getElementById('annual-profitability'),
+            monthlyDetail: document.getElementById('monthly-detail'),
         };
 
         // **********************************************************
@@ -371,15 +459,16 @@
                 // setLogLevel('debug'); // Décommenter pour déboguer Firebase
                 const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
                 
-                // --- CORRECTION DE L'ERREUR D'INITIALISATION ---
-                // Vérifie si la configuration est vide. Si c'est le cas, affiche un message d'erreur et stoppe l'initialisation.
-                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                // --- CORRECTION RENFORCÉE DE L'ERREUR D'INITIALISATION ---
+                const isConfigValid = (config) => Object.keys(config).length > 0 && config.apiKey;
+
+                if (!isConfigValid(firebaseConfig)) {
                     document.getElementById('auth-status').textContent = 'Erreur: Configuration Firebase manquante. La sauvegarde Cloud est désactivée.';
                     console.error("Firebase config is missing or empty.");
-                    // Laissez isAuthReady à false pour empêcher les appels à Firestore
+                    // Retourne tôt pour empêcher l'appel à initializeApp sans arguments
                     return; 
                 }
-                // ---------------------------------------------
+                // --------------------------------------------------------
                 
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -424,7 +513,6 @@
                     inputs.propContact.value = data.contact || '';
                     updatePreview(); // Mise à jour de l'aperçu avec les infos du propriétaire
                 } else {
-                    // Si le document propriétaire n'existe pas, l'initialiser
                     saveOwnerData(initialOwnerData);
                 }
             }, (error) => console.error("Erreur lecture propriétaire:", error));
@@ -434,7 +522,6 @@
             const propertiesRef = getUserPropertiesCollectionRef();
             onSnapshot(propertiesRef, async (snapshot) => {
                 if (snapshot.empty && isAuthReady) {
-                    // Si la collection est vide, la remplir avec les données initiales
                     await initializePropertiesData();
                     return;
                 }
@@ -442,16 +529,13 @@
                 currentProperties = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 populatePropertySelector();
 
-                // Tenter de recharger la propriété précédemment sélectionnée, sinon la première
                 const selectedIndex = inputs.propertySelector.value || '0';
                 if (currentProperties.length > 0 && selectedIndex) {
                     loadPropertyData(selectedIndex);
                 } else {
-                    // Si aucune propriété, vider les champs
                     clearForm();
                 }
 
-                // Activer ou désactiver le bouton de suppression
                 inputs.deleteBtn.disabled = currentProperties.length === 0;
 
             }, (error) => console.error("Erreur lecture propriétés:", error));
@@ -464,7 +548,6 @@
 
             const batch = [];
             initialPropertiesData.forEach((prop, index) => {
-                // Utiliser un ID séquentiel pour la première fois pour l'exemple
                 const docRef = doc(getUserPropertiesCollectionRef(), `prop${index + 1}`);
                 batch.push(setDoc(docRef, prop));
             });
@@ -494,15 +577,12 @@
             }
             inputs.actionMessage.textContent = "Sauvegarde en cours...";
             
-            // 1. Sauvegarde des infos Propriétaire (elles sont dans le même formulaire)
             await saveOwnerData({
                 nom: inputs.propNom.value,
                 contact: inputs.propContact.value
             });
 
-            // 2. Sauvegarde des infos du Bien
             const selectedIndex = inputs.propertySelector.value;
-            // Utilise un ID existant si non nouveau, sinon crée un UUID
             const currentPropId = (isNew || !inputs.propertySelector.value) ? window.crypto.randomUUID() : currentProperties[selectedIndex].id;
             
             const propertyData = {
@@ -541,8 +621,6 @@
                 const docRef = doc(getUserPropertiesCollectionRef(), propertyToDelete.id);
                 await deleteDoc(docRef);
                 inputs.actionMessage.textContent = "Bien supprimé !";
-
-                // L'onSnapshot rechargera les données et mettra à jour le sélecteur
             } catch (error) {
                 console.error("Erreur lors de la suppression du bien:", error);
                 inputs.actionMessage.textContent = "Erreur lors de la suppression.";
@@ -552,6 +630,23 @@
         // **********************************************************
         // ** 3. LOGIQUE D'INTERFACE ET DE PRÉVISUALISATION        **
         // **********************************************************
+
+        // Fonction de navigation entre les onglets
+        function showTab(tabName) {
+            inputs.tabQuittance.classList.add('hidden');
+            inputs.tabSuivi.classList.add('hidden');
+            inputs.tabQuittanceBtn.classList.remove('active');
+            inputs.tabSuiviBtn.classList.remove('active');
+            
+            if (tabName === 'quittance') {
+                inputs.tabQuittance.classList.remove('hidden');
+                inputs.tabQuittanceBtn.classList.add('active');
+            } else if (tabName === 'suivi') {
+                inputs.tabSuivi.classList.remove('hidden');
+                inputs.tabSuiviBtn.classList.add('active');
+                updateSuiviPanel(); // Met à jour le suivi quand l'onglet est activé
+            }
+        }
 
         // Fonction pour remplir le menu déroulant
         function populatePropertySelector() {
@@ -569,7 +664,6 @@
             currentProperties.forEach((prop, index) => {
                 const option = document.createElement('option');
                 option.value = index;
-                // Affichage Locataire et Adresse pour une identification claire
                 option.textContent = `${prop.locataire} - ${prop.adresse}`; 
                 inputs.propertySelector.appendChild(option);
             });
@@ -582,14 +676,12 @@
             const prop = currentProperties[index];
 
             if (prop) {
-                // Mettre à jour les champs Locataire et Montants
                 inputs.locNom.value = prop.locataire || '';
                 inputs.locEmail.value = prop.email || '';
                 inputs.locAdresse.value = prop.adresse || '';
                 inputs.loyer.value = prop.loyer_hc ? prop.loyer_hc.toFixed(2) : '0.00';
                 inputs.charges.value = prop.charges ? prop.charges.toFixed(2) : '0.00';
             }
-            // Déclenche la mise à jour de l'aperçu
             updatePreview();
         }
         
@@ -600,7 +692,7 @@
             inputs.locAdresse.value = "Nouvelle Adresse";
             inputs.loyer.value = "0.00";
             inputs.charges.value = "0.00";
-            inputs.propertySelector.value = ''; // Désélectionne l'option
+            inputs.propertySelector.value = ''; 
             inputs.deleteBtn.disabled = true;
             inputs.actionMessage.textContent = "Saisissez les données et cliquez sur 'Sauvegarder'.";
             updatePreview();
@@ -646,27 +738,24 @@
                 return '';
             }
             
-            // Fonction pour traiter le total (simple pour l'exemple)
             let euroText = convert(euros).trim() + (euros > 1 ? ' Euros' : ' Euro');
             let centimeText = centimes > 0 ? (centimes > 1 ? ' et ' + convert(centimes) + ' centimes' : ' et un centime') : '';
             let result = euroText + centimeText;
             return result.charAt(0).toUpperCase() + result.slice(1);
         }
         
-        // Fonction principale de mise à jour de l'aperçu
+        // Fonction principale de mise à jour de l'aperçu (Quittance)
         function updatePreview() {
             const loyer = parseFloat(inputs.loyer.value) || 0;
             const charges = parseFloat(inputs.charges.value) || 0;
             const total = loyer + charges;
             
-            // Calcul et affichage de la période complète (du 01 au dernier jour du mois)
             const periodeValue = inputs.periode.value;
             const [year, month] = periodeValue.split('-');
             const startDate = `01-${month}-${year}`;
             const lastDay = new Date(year, month, 0).getDate();
             const endDate = `${lastDay}-${month}-${year}`;
 
-            // Mise à jour des blocs d'information
             previews.propNom.textContent = inputs.propNom.value;
             previews.propContact.textContent = inputs.propContact.value;
             previews.locNom.textContent = inputs.locNom.value;
@@ -674,20 +763,15 @@
             previews.locAdresse.textContent = inputs.locAdresse.value;
             previews.periode.textContent = `du ${startDate} au ${endDate}`;
             
-            // Mise à jour du texte principal
             previews.propNomText.textContent = inputs.propNom.value;
             previews.locAdresseText.textContent = inputs.locAdresse.value;
             previews.locNomText.textContent = inputs.locNom.value;
             
-            // Mise à jour des montants formatés en Euro
             previews.loyer.textContent = `${loyer.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
             previews.charges.textContent = `${charges.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
             previews.total.textContent = `${total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
-            
-            // Mise à jour du total en toutes lettres
             previews.totalText.textContent = numberToWordsFrench(total);
 
-            // Mise à jour de la date d'émission (format jj-mm-aaaa)
             const dateEmissionValue = inputs.dateEmission.value;
             if(dateEmissionValue) {
                 const [y, m, d] = dateEmissionValue.split('-');
@@ -696,11 +780,10 @@
 
             previews.signature.textContent = inputs.propNom.value;
             
-            // Mise à jour du graphique
             updateChart(loyer, charges);
         }
         
-        // Initialisation du graphique Chart.js
+        // Initialisation du graphique Chart.js (Quittance)
         function initChart() {
             const ctx = document.getElementById('repartitionChart').getContext('2d');
             repartitionChart = new Chart(ctx, {
@@ -709,14 +792,14 @@
                     labels: ['Loyer', 'Charges'],
                     datasets: [{
                         data: [0, 0],
-                        backgroundColor: ['#10b981', '#f5a623'], /* Vert forêt pour Loyer, Orange pour Charges */
+                        backgroundColor: ['#10b981', '#f5a623'], 
                         borderColor: '#ffffff',
                         borderWidth: 4,
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false, /* Nécessaire pour respecter le conteneur */
+                    maintainAspectRatio: false, 
                     cutout: '70%',
                     plugins: {
                         legend: { position: 'bottom' },
@@ -736,7 +819,7 @@
             });
         }
 
-        // Mise à jour du graphique avec les nouvelles valeurs
+        // Mise à jour du graphique (Quittance)
         function updateChart(loyer, charges) {
             if (repartitionChart) {
                 repartitionChart.data.datasets[0].data = [loyer, charges];
@@ -744,34 +827,97 @@
             }
         }
 
-        // Fonction d'envoi d'e-mail (génère le lien mailto)
-        function sendEmail() {
-            const locataire = inputs.locNom.value;
-            const email = inputs.locEmail.value;
-            const periode = previews.periode.textContent;
-            const total = previews.total.textContent;
-            const dateEmission = previews.dateEmission.textContent;
-            const propNom = inputs.propNom.value;
+        // NOUVEAU: Logique pour le tableau de bord de suivi
+        function updateSuiviPanel() {
+            // 1. Calculs Annuels
+            const totalLoyerAnnuel = monthlyData.reduce((sum, item) => sum + item.loyer, 0);
+            const totalDepensesAnnuel = monthlyData.reduce((sum, item) => sum + item.total_depenses, 0);
+            const beneficeNetAnnuel = totalLoyerAnnuel - totalDepensesAnnuel;
+            const rentabilite = totalLoyerAnnuel > 0 ? (beneficeNetAnnuel / totalLoyerAnnuel) * 100 : 0;
+            
+            const formatCurrency = (value) => value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+            
+            // 2. Affichage des Totaux Annuels
+            previews.annualRent.textContent = formatCurrency(totalLoyerAnnuel);
+            previews.annualExpenses.textContent = formatCurrency(totalDepensesAnnuel);
+            previews.annualNet.textContent = formatCurrency(beneficeNetAnnuel);
+            previews.annualNet.classList.toggle('text-red-600', beneficeNetAnnuel < 0);
+            previews.annualNet.classList.toggle('text-green-900', beneficeNetAnnuel >= 0);
+            previews.annualProfitability.textContent = `${rentabilite.toFixed(2)} %`;
 
-            if (!email) {
-                // Utilisation de la zone de message pour l'utilisateur
-                inputs.actionMessage.textContent = 'Erreur: Veuillez entrer l\'adresse e-mail du locataire.';
-                return;
+            // 3. Détail Mensuel
+            let detailHTML = '';
+            monthlyData.forEach(item => {
+                const rowClass = item.benefice_net < 0 ? 'bg-red-50' : (item.benefice_net > 0 ? 'bg-green-50' : '');
+                detailHTML += `
+                    <tr class="border-b ${rowClass}">
+                        <td class="p-2">${item.mois}</td>
+                        <td class="p-2 text-right">${formatCurrency(item.loyer)}</td>
+                        <td class="p-2 text-right">${formatCurrency(item.total_depenses)}</td>
+                        <td class="p-2 text-right font-bold">${formatCurrency(item.benefice_net)}</td>
+                    </tr>
+                `;
+            });
+            previews.monthlyDetail.innerHTML = detailHTML;
+            
+            // 4. Mise à jour du graphique de Bénéfice Net
+            updateNetBenefitChart(monthlyData.map(item => item.mois), monthlyData.map(item => item.benefice_net));
+        }
+
+        // NOUVEAU: Initialisation et mise à jour du graphique de Bénéfice Net
+        function initNetBenefitChart() {
+            const ctx = document.getElementById('netBenefitChart').getContext('2d');
+            netBenefitChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: monthlyData.map(item => item.mois),
+                    datasets: [{
+                        label: 'Bénéfice Net Mensuel (€)',
+                        data: monthlyData.map(item => item.benefice_net),
+                        backgroundColor: (context) => {
+                            const value = context.parsed.y;
+                            return value >= 0 ? '#10b981' : '#ef4444'; // Vert si positif, Rouge si négatif
+                        },
+                        borderColor: '#ffffff',
+                        borderWidth: 1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: { display: true, text: 'Bénéfice Net (€)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Mois' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (context.parsed.y !== null) {
+                                        label += ': ' + context.parsed.y.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateNetBenefitChart(labels, data) {
+            if (netBenefitChart) {
+                netBenefitChart.data.labels = labels;
+                netBenefitChart.data.datasets[0].data = data;
+                netBenefitChart.update();
             }
-
-            const subject = encodeURIComponent(`Quittance de loyer ${periode}`);
-            
-            let body = `Bonjour ${locataire},\n\n`;
-            body += `Veuillez trouver ci-joint la quittance de loyer pour la période ${periode}.\n\n`;
-            body += `Montant total payé : ${total}.\n`;
-            body += `Date d'émission : ${dateEmission}.\n\n`;
-            body += `Ceci confirme le règlement de votre loyer et des charges.\n\n`;
-            body += `Cordialement,\n${propNom}`;
-
-            const mailtoLink = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(body)}`;
-            
-            // Ouvre le client de messagerie
-            window.location.href = mailtoLink;
         }
 
 
@@ -795,7 +941,7 @@
             // Événements du sélecteur et des boutons de gestion
             inputs.propertySelector.addEventListener('change', (e) => loadPropertyData(e.target.value));
             inputs.saveBtn.addEventListener('click', () => {
-                const isNew = !inputs.propertySelector.value || currentProperties.length === 0; // Si vide ou non sélectionné, c'est un nouveau
+                const isNew = !inputs.propertySelector.value || currentProperties.length === 0; 
                 savePropertyData(isNew);
             });
             inputs.deleteBtn.addEventListener('click', deleteSelectedProperty);
@@ -805,12 +951,17 @@
             document.getElementById('print-btn').addEventListener('click', () => { window.print(); });
             document.getElementById('email-btn').addEventListener('click', sendEmail);
             
-            initChart();
-            updatePreview(); // Mise à jour initiale
+            // NOUVEAU: Gestion des Onglets
+            inputs.tabQuittanceBtn.addEventListener('click', () => showTab('quittance'));
+            inputs.tabSuiviBtn.addEventListener('click', () => showTab('suivi'));
+            
+            initChart(); // Graphique Quittance
+            initNetBenefitChart(); // Graphique Suivi
+            updatePreview(); 
+            updateSuiviPanel();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-             // Démarrer l'initialisation de Firebase et de l'application
              initializeFirebase();
              initializeApp();
         });
