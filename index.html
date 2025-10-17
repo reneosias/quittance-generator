@@ -33,9 +33,6 @@
         window.getDocs = getDocs;
         window.deleteDoc = deleteDoc;
         window.setLogLevel = setLogLevel;
-        
-        // Indicateur global pour vérifier si Firebase est chargé
-        window.firebaseModuleLoaded = true;
     </script>
     
     <style>
@@ -362,6 +359,9 @@
         let db, auth, currentUserId, currentProperties = [];
         let repartitionChart, netBenefitChart; // Ajout du graphique de bénéfice net
         let isAuthReady = false;
+        
+        // ** INDIQUE SI LES FONCTIONNALITÉS CLOUD SONT ACTIVES **
+        let cloudEnabled = false;
 
         // Données INITIALES POUR LA QUITTANCE (Uniquement utilisées si la base est vide)
         const initialOwnerData = {
@@ -454,7 +454,7 @@
         }
 
         // 2.1 Authentification et Initialisation
-        async function initializeFirebase() {
+        async function initializeCloudFeatures() {
             
             // Si le module Firebase n'est pas chargé (ce qui est peu probable ici mais sécurise le code)
             if (typeof window.initializeApp === 'undefined') {
@@ -465,28 +465,27 @@
             try {
                 // setLogLevel('debug'); // Décommenter pour déboguer Firebase
                 
-                // IMPORTANT: Tentative de parser la configuration
                 let firebaseConfig = {};
-                try {
-                    // Si __firebase_config n'est pas une chaîne valide ou est vide, JSON.parse va échouer ou donner un objet vide
-                    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                
+                // Tente de récupérer et de parser la configuration
+                if (typeof __firebase_config === 'string' && __firebase_config.length > 2) {
+                    try {
                         firebaseConfig = JSON.parse(__firebase_config);
+                    } catch (e) {
+                        console.error("Erreur lors du parsing de __firebase_config:", e);
                     }
-                } catch (e) {
-                    console.error("Erreur lors du parsing de __firebase_config:", e);
                 }
 
-                // --- CORRECTION RENFORCÉE DE L'ERREUR D'INITIALISATION ---
+                // --- VÉRIFICATION CRITIQUE ---
                 // Vérifie si l'objet de configuration est non vide et contient une clé essentielle (apiKey)
                 const isConfigValid = (config) => Object.keys(config).length > 0 && config.apiKey;
 
                 if (!isConfigValid(firebaseConfig)) {
                     document.getElementById('auth-status').textContent = 'Erreur: Configuration Firebase manquante. La sauvegarde Cloud est désactivée.';
                     console.warn("Firebase config is missing or empty. Cloud save is disabled.");
-                    // Retourne tôt pour empêcher l'appel à initializeApp sans arguments
-                    return; 
+                    return; // Stoppe l'initialisation du Cloud
                 }
-                // --------------------------------------------------------
+                // --- Configuration valide ---
                 
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -503,14 +502,15 @@
                 window.onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUserId = user.uid;
-                        document.getElementById('auth-status').textContent = 'Connecté (Gestion Cloud)';
+                        document.getElementById('auth-status').textContent = 'Connecté (Sauvegarde Cloud active)';
                         document.getElementById('user-id').textContent = currentUserId;
                         isAuthReady = true;
+                        cloudEnabled = true;
 
                         // 3. Lancer les écouteurs de données
                         initializeDataListeners();
                     } else {
-                        document.getElementById('auth-status').textContent = 'Déconnecté (Erreur)';
+                        document.getElementById('auth-status').textContent = 'Déconnecté (Cloud inactif)';
                     }
                 });
 
@@ -522,7 +522,7 @@
 
         // 2.2 Écouteurs en temps réel (Owner et Properties)
         function initializeDataListeners() {
-            if (!isAuthReady) return;
+            if (!cloudEnabled) return;
 
             // Écouteur pour les informations du propriétaire
             const ownerRef = getOwnerDocRef();
@@ -563,7 +563,7 @@
 
         // 2.3 Initialisation et Sauvegarde
         async function initializePropertiesData() {
-            if (!isAuthReady) return;
+            if (!cloudEnabled) return;
             inputs.actionMessage.textContent = "Initialisation des données de base...";
 
             const batch = [];
@@ -582,7 +582,7 @@
         }
 
         async function saveOwnerData(data) {
-            if (!isAuthReady) return;
+            if (!cloudEnabled) return;
             try {
                 await setDoc(getOwnerDocRef(), data);
             } catch (error) {
@@ -591,8 +591,8 @@
         }
         
         async function savePropertyData(isNew = false) {
-            if (!isAuthReady) {
-                inputs.actionMessage.textContent = "Erreur: Connexion Cloud non établie. Impossible de sauvegarder.";
+            if (!cloudEnabled) {
+                inputs.actionMessage.textContent = "La sauvegarde Cloud est désactivée. Les données ne sont pas enregistrées.";
                 return;
             }
             inputs.actionMessage.textContent = "Sauvegarde en cours...";
@@ -625,7 +625,11 @@
         }
 
         async function deleteSelectedProperty() {
-            if (!isAuthReady || currentProperties.length === 0) return;
+            if (!cloudEnabled) {
+                 inputs.actionMessage.textContent = "La suppression Cloud est désactivée.";
+                 return;
+            }
+            if (currentProperties.length === 0) return;
             
             inputs.actionMessage.textContent = "Suppression en cours...";
 
@@ -676,6 +680,11 @@
         function populatePropertySelector() {
             inputs.propertySelector.innerHTML = '';
             
+            // Si le cloud est désactivé, utilisez les données locales pour l'initialisation
+            if (!cloudEnabled && currentProperties.length === 0) {
+                 currentProperties = initialPropertiesData.map((prop, index) => ({...prop, id: `local-${index}`}));
+            }
+            
             if (currentProperties.length === 0) {
                  const option = document.createElement('option');
                  option.value = '';
@@ -700,11 +709,17 @@
             const prop = currentProperties[index];
 
             if (prop) {
+                // Mise à jour des champs avec les données du bien
                 inputs.locNom.value = prop.locataire || '';
                 inputs.locEmail.value = prop.email || '';
                 inputs.locAdresse.value = prop.adresse || '';
                 inputs.loyer.value = prop.loyer_hc ? prop.loyer_hc.toFixed(2) : '0.00';
                 inputs.charges.value = prop.charges ? prop.charges.toFixed(2) : '0.00';
+                // Mise à jour des champs Propriétaire (avec données initiales si Cloud off)
+                 if (!cloudEnabled) {
+                    inputs.propNom.value = initialOwnerData.nom;
+                    inputs.propContact.value = initialOwnerData.contact;
+                 }
             }
             updatePreview();
         }
@@ -718,7 +733,7 @@
             inputs.charges.value = "0.00";
             inputs.propertySelector.value = ''; 
             inputs.deleteBtn.disabled = true;
-            inputs.actionMessage.textContent = "Saisissez les données et cliquez sur 'Sauvegarder'.";
+            inputs.actionMessage.textContent = cloudEnabled ? "Saisissez les données et cliquez sur 'Sauvegarder'." : "Saisie locale. Données non persistantes.";
             updatePreview();
         }
 
@@ -983,7 +998,14 @@
             
             // Événements du sélecteur et des boutons de gestion
             inputs.propertySelector.addEventListener('change', (e) => loadPropertyData(e.target.value));
+            
+            // Les boutons Sauvegarder/Supprimer n'utilisent les fonctions Cloud que si le cloud est actif
             inputs.saveBtn.addEventListener('click', () => {
+                // Pour la sauvegarde locale, on garde juste les données du formulaire actuel
+                if (!cloudEnabled) {
+                    inputs.actionMessage.textContent = "La sauvegarde Cloud est désactivée. Données non persistantes.";
+                    return;
+                }
                 const isNew = !inputs.propertySelector.value || currentProperties.length === 0; 
                 savePropertyData(isNew);
             });
@@ -1002,6 +1024,10 @@
             initChart(); // Graphique Quittance
             initNetBenefitChart(); // Graphique Suivi
 
+            // Initialisation des données des propriétés (Cloud ou Local)
+            populatePropertySelector();
+            loadPropertyData(0); // Charge le premier élément par défaut
+            
             // Affichage initial de l'onglet Quittance
             showTab('quittance'); 
 
@@ -1010,14 +1036,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-             // Vérifie si les fonctions Firebase sont disponibles avant d'appeler initializeFirebase
-             if (typeof window.initializeApp !== 'undefined' && window.firebaseModuleLoaded) {
-                initializeFirebase();
-             } else {
-                 // Si le script de module n'a pas chargé les fonctions, affiche une erreur non bloquante.
-                 document.getElementById('auth-status').textContent = 'Erreur: Le script Firebase ne s\'est pas chargé correctement. Cloud désactivé.';
-                 console.error("Firebase module functions are not defined. Cloud features disabled.");
-             }
+             // Tente d'initialiser les fonctionnalités Cloud (Firebase)
+             initializeCloudFeatures();
+             
+             // Initialise l'application immédiatement pour que le générateur fonctionne même sans Cloud
              initializeApp();
         });
     </script>
