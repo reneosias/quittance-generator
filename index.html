@@ -70,6 +70,13 @@
             box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.4);
         }
         .btn-red:hover { background-color: #dc2626; }
+
+        .btn-blue { /* Nouveau style pour l'e-mail */
+            background-color: #3b82f6; 
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+        }
+        .btn-blue:hover { background-color: #2563eb; }
         
         /* Conteneur pour le graphique */
         .chart-container {
@@ -235,8 +242,12 @@
                     </div>
                 </section>
                 
-                <div class="card text-center mt-4 no-print">
+                <div class="card text-center mt-4 no-print grid grid-cols-2 gap-4">
+                    <button id="email-btn" class="btn btn-blue w-full">Envoyer par E-mail</button>
                     <button id="print-btn" class="btn btn-primary w-full">Imprimer la Quittance</button>
+                </div>
+                <div id="email-instruction" class="card text-sm p-3 mt-4 text-center text-gray-600 hidden no-print">
+                    ⚠️ **Étape manuelle requise :** Le PDF ne peut pas être joint automatiquement. N'oubliez pas d'utiliser le bouton **"Imprimer la Quittance"** (choisir 'Enregistrer en PDF') puis de glisser-déposer le fichier PDF dans l'e-mail pré-rempli.
                 </div>
             </div>
         </main>
@@ -286,8 +297,10 @@
             locTel: document.getElementById('loc-tel'),     
             saveBtn: document.getElementById('save-btn'),
             addNewBtn: document.getElementById('add-new-btn'),
-            deleteBtn: document.getElementById('delete-btn'), // AJOUTÉ
+            deleteBtn: document.getElementById('delete-btn'), 
             actionMessage: document.getElementById('action-message'),
+            emailBtn: document.getElementById('email-btn'), // NOUVEAU
+            emailInstruction: document.getElementById('email-instruction'), // NOUVEAU
         };
 
         const previews = {
@@ -420,6 +433,30 @@
                 inputs.actionMessage.textContent = "Bien supprimé avec succès.";
                 populatePropertySelector(0); // Recharge la liste et sélectionne le premier élément
             }
+        }
+        
+        // NOUVEAU: Fonction pour générer l'e-mail
+        function sendQuittanceEmail() {
+            const locataireEmail = inputs.locEmail.value;
+            const locataireName = inputs.locNom.value;
+            const periode = previews.periode.textContent; 
+            const total = previews.total.textContent;
+            
+            if (!locataireEmail || !locataireEmail.includes('@')) {
+                inputs.actionMessage.textContent = "L'adresse e-mail du locataire est manquante ou invalide. Veuillez la renseigner.";
+                return;
+            }
+
+            const subject = `Votre Quittance de Loyer pour la période ${periode}`;
+            const body = `Bonjour ${locataireName},\n\nVeuillez trouver ci-joint votre quittance de loyer d'un montant total de ${total} pour la période ${periode}.\n\nCordialement,\n${inputs.propNom.value}`;
+
+            // Utilisation du protocole mailto: pour ouvrir le client mail
+            const mailtoLink = `mailto:${locataireEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            // Afficher l'instruction de sauvegarde PDF
+            inputs.emailInstruction.classList.remove('hidden');
+            
+            window.location.href = mailtoLink;
         }
 
 
@@ -574,7 +611,8 @@
             inputs.propertySelector.addEventListener('change', (e) => loadPropertyData(e.target.value));
             inputs.saveBtn.addEventListener('click', savePropertyData);
             inputs.addNewBtn.addEventListener('click', clearForm);
-            inputs.deleteBtn.addEventListener('click', deleteSelectedProperty); // AJOUTÉ
+            inputs.deleteBtn.addEventListener('click', deleteSelectedProperty); 
+            inputs.emailBtn.addEventListener('click', sendQuittanceEmail); // NOUVEAU
 
             // Bouton d'impression
             document.getElementById('print-btn').addEventListener('click', () => { window.print(); });
