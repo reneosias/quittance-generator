@@ -14,69 +14,74 @@
     
     <style>
         /* Styles de base pour l'esthétique et la réactivité */
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; } 
+        body { font-family: 'Inter', sans-serif; background-color: #e5e7eb; } 
+        
+        /* Amélioration du style des inputs */
         .form-input, .form-select { 
             width: 100%; 
             padding: 0.75rem; 
             border: 1px solid #d1d5db; 
             border-radius: 0.5rem;
-            appearance: none; /* Cache la flèche par défaut pour select */
+            appearance: none; 
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         .form-input:focus, .form-select:focus { 
             outline: none; 
-            border-color: #4a90e2; /* Bleu d'origine */
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+            border-color: #3b82f6; /* Bleu plus vif */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
         }
-        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #4a5568; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
+        
+        /* Nouveau style de carte avec ombre plus douce */
         .card { 
-            background-color: white; 
-            border-radius: 0.75rem; 
-            box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem; 
+            background-color: white;             border-radius: 1rem; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Ombre plus douce */
+            padding: 2rem; 
         }
+
+        /* Styles des boutons améliorés */
         .btn { 
             padding: 0.75rem 1.5rem; 
-            border-radius: 0.5rem; 
+            border-radius: 0.6rem; 
             font-weight: 600; 
             text-align: center; 
             cursor: pointer; 
-            transition: background-color 0.2s, box-shadow 0.2s;
+            transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
         }
-        /* Style des boutons d'action */
-        .btn-primary { 
-            background-color: #4a90e2; /* Bleu d'origine */
-            color: white; 
-            box-shadow: 0 4px 6px -1px rgba(74, 144, 226, 0.4); 
-        }
-        .btn-primary:hover { background-color: #3a7fd0; }
+        .btn:active { transform: translateY(1px); }
 
-        .btn-green {
+        /* Palette de couleurs basée sur le bleu (primary: 600) et le vert (success: 500) */
+        .btn-primary { 
+            background-color: #3b82f6; 
+            color: white; 
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4); 
+        }
+        .btn-primary:hover { background-color: #2563eb; }
+
+        .btn-green { /* Nouveau bien */
             background-color: #10b981;
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
         }
         .btn-green:hover { background-color: #059669; }
 
-        .btn-yellow {
+        .btn-yellow { /* Enregistrer */
             background-color: #f59e0b;
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.4);
         }
         .btn-yellow:hover { background-color: #d97706; }
 
-        .btn-red {
+        .btn-red { /* Supprimer */
             background-color: #ef4444;
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.4);
         }
         .btn-red:hover { background-color: #dc2626; }
 
-        .btn-blue { /* Nouveau style pour l'e-mail */
-            background-color: #3b82f6; 
+        .btn-mail { /* Envoyer Email */
+            background-color: #4f46e5; /* Indigo */
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);
         }
-        .btn-blue:hover { background-color: #2563eb; }
+        .btn-mail:hover { background-color: #4338ca; }
         
         /* Conteneur pour le graphique */
         .chart-container {
@@ -86,6 +91,32 @@
             margin-left: auto;
             margin-right: auto;
             height: 300px;
+        }
+
+        /* Style pour les notifications Toast */
+        #toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 50;
+        }
+        .toast {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            animation: fadeInOut 5s ease-in-out forwards;
+        }
+        .toast-success { background-color: #10b981; color: white; }
+        .toast-error { background-color: #ef4444; color: white; }
+        .toast-info { background-color: #3b82f6; color: white; }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(100%); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(100%); }
         }
 
         /* Styles d'impression : Masque les outils pour imprimer uniquement la quittance */
@@ -110,29 +141,34 @@
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 no-print">
             <h1 class="text-3xl font-bold text-gray-900">Générateur de Quittance Multi-Propriété</h1>
-            <p class="text-gray-600 mt-1">Gérez vos biens et générez des quittances personnalisées.</p>
+            <p class="text-gray-600 mt-1">Gérez vos biens et générez des quittances personnalisées. (Sauvegarde Cloud via Firestore)</p>
+             <p id="user-info" class="text-xs mt-2 text-gray-500">
+                <span id="loading-spinner" class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-blue-500 mr-2"></span>
+                Connexion au Cloud...
+             </p>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             <!-- VOLET GAUCHE : FORMULAIRE D'ÉDITION -->
-            <div class="space-y-8 no-print">
+            <div class="space-y-8 no-print" id="input-controls">
                 
                 <section class="card">
-                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Sélection & Gestion de la Propriété</h2>
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-blue-700">Sélection & Gestion de la Propriété</h2>
                     <label for="property-selector" class="form-label">Propriété :</label>
-                    <select id="property-selector" class="form-select mb-4"></select>
+                    <select id="property-selector" class="form-select mb-4" disabled>
+                        <option value="-1">Chargement des données...</option>
+                    </select>
 
                     <div class="grid grid-cols-3 gap-3">
                         <button id="add-new-btn" class="btn btn-green">Nouveau Bien</button>
                         <button id="save-btn" class="btn btn-yellow">Enregistrer les Modifs</button>
                         <button id="delete-btn" class="btn btn-red" disabled>Supprimer ce Bien</button>
                     </div>
-                    <p id="action-message" class="text-sm mt-3 text-center font-medium text-gray-500"></p>
                 </section>
 
                 <section class="card">
-                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Paramètres de la Quittance</h2>
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-blue-700">Paramètres de la Quittance</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="periode" class="form-label">Période (Mois/Année)</label>
@@ -154,9 +190,9 @@
                 </section>
 
                 <section class="card">
-                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Informations des Parties</h2>
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-blue-700">Informations des Parties</h2>
                     <div class="space-y-4">
-                        <h3 class="font-semibold text-gray-700">Propriétaire</h3>
+                        <h3 class="font-semibold text-gray-700">Propriétaire (Bailleur)</h3>
                         <input type="text" id="prop-nom" class="form-input" placeholder="Nom du Propriétaire" value="René Osias ASSENDAHI">
                         <input type="text" id="prop-contact" class="form-input" placeholder="Contact Propriétaire (Tél/Email)" value="0668336085 / essonne1992@gmail.com">
                     </div>
@@ -164,14 +200,14 @@
                         <h3 class="font-semibold text-gray-700">Locataire</h3>
                         <input type="text" id="loc-nom" class="form-input" placeholder="Nom du Locataire" value="SOLIHA SEINE ET MARNE">
                         <input type="text" id="loc-adresse" class="form-input" placeholder="Adresse du Logement" value="76 rue dian fossey 77000 melun">
-                        <input type="email" id="loc-email" class="form-input" placeholder="Adresse E-mail du Locataire" value="">
-                        <input type="tel" id="loc-tel" class="form-input" placeholder="Numéro de téléphone du Locataire" value="">
+                        <input type="email" id="loc-email" class="form-input" placeholder="Adresse E-mail du Locataire" value="soliha@example.com">
+                        <input type="tel" id="loc-tel" class="form-input" placeholder="Numéro de téléphone du Locataire" value="06 12 34 56 78">
                     </div>
                 </section>
                 
                 <!-- Section de visualisation (Graphique de Loyer/Charges) -->
                 <section class="card">
-                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Composition du Loyer</h2>
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-blue-700">Composition du Loyer</h2>
                     <div class="chart-container">
                         <canvas id="repartitionChart"></canvas>
                     </div>
@@ -180,107 +216,112 @@
 
             <!-- VOLET DROIT : APERÇU DE LA QUITTANCE IMPRIMABLE -->
             <div>
-                <section id="quittance-preview" class="card quittance-preview flex flex-col p-8 md:p-12">
-                    <h2 class="text-3xl font-bold text-center mb-8 text-blue-700">QUITTANCE DE LOYER</h2>
+                <section id="quittance-preview" class="card quittance-preview flex flex-col p-8 md:p-12 border-4 border-blue-100 min-h-[600px]">
+                    
+                    <div class="text-right text-sm text-gray-500 mb-6">
+                        <p id="preview-prop-contact-small"></p>
+                    </div>
+
+                    <h2 class="text-3xl font-extrabold text-center mb-10 text-blue-800 border-b-4 border-blue-500 pb-2">QUITTANCE DE LOYER</h2>
 
                     <!-- Bloc infos (Propriétaire/Locataire) -->
                     <div class="grid grid-cols-2 gap-8 mb-8 text-sm">
-                        <div>
-                            <h3 class="font-semibold border-b border-blue-200 text-blue-800 pb-1 mb-2">PROPRIÉTAIRE</h3>
-                            <p id="preview-prop-nom" class="font-medium"></p>
+                        <div class="p-3 border rounded-lg bg-blue-50">
+                            <h3 class="font-bold text-blue-800 pb-1 mb-2">BAILLEUR (PROPRIÉTAIRE)</h3>
+                            <p id="preview-prop-nom" class="font-medium text-lg"></p>
                             <p id="preview-prop-contact" class="text-gray-600"></p>
                         </div>
-                        <div>
-                            <h3 class="font-semibold border-b border-blue-200 text-blue-800 pb-1 mb-2">LOCATAIRE</h3>
-                            <p id="preview-loc-nom" class="font-medium"></p>
+                        <div class="p-3 border rounded-lg bg-yellow-50">
+                            <h3 class="font-bold text-yellow-800 pb-1 mb-2">LOCATAIRE</h3>
+                            <p id="preview-loc-nom" class="font-medium text-lg"></p>
                             <p id="preview-loc-email" class="text-gray-600"></p>
                             <p id="preview-loc-tel" class="text-gray-600"></p>
-                            <p class="text-gray-600 mt-2">Logement situé au :</p>
-                            <p id="preview-loc-adresse" class="font-medium"></p>
                         </div>
                     </div>
-                    
-                    <div class="mb-8">
-                        <p class="text-lg"><strong>Période :</strong> <span id="preview-periode"></span></p>
+
+                    <div class="mb-8 p-4 bg-gray-100 rounded-lg">
+                        <p class="text-lg"><strong>Logement situé au :</strong> <span id="preview-loc-adresse" class="font-bold text-blue-700"></span></p>
+                        <p class="text-lg mt-1"><strong>Période concernée :</strong> <span id="preview-periode" class="font-bold"></span></p>
                     </div>
 
                     <!-- Texte principal avec le total en toutes lettres -->
-                    <p class="mb-6">Je soussigné, <strong id="preview-prop-nom-text"></strong>, propriétaire du logement situé au <strong id="preview-loc-adresse-text"></strong>, atteste avoir reçu, de la part de <strong id="preview-loc-nom-text"></strong>, la somme de <strong id="total-text"></strong>, se décomposant comme suit :</p>
+                    <p class="mb-6 leading-relaxed">
+                        Je soussigné, <strong id="preview-prop-nom-text"></strong>, propriétaire du logement ci-dessus désigné,
+                        atteste avoir reçu, de la part de <strong id="preview-loc-nom-text"></strong>,
+                        la somme totale de <strong id="preview-total-text" class="text-red-600"></strong>,
+                        correspondant au paiement du loyer et des charges pour la période ci-dessus mentionnée.
+                        Cette somme se décompose comme suit :
+                    </p>
 
                     <!-- Tableau des montants -->
-                    <table class="w-full mb-8 border border-blue-300">
-                        <thead class="bg-blue-100 text-blue-900">
+                    <table class="w-full mb-8 border border-blue-400 rounded-lg overflow-hidden">
+                        <thead class="bg-blue-600 text-white">
                             <tr>
                                 <th class="text-left p-3 font-semibold">Désignation</th>
                                 <th class="text-right p-3 font-semibold">Montant</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="border-t">
-                                <td class="p-3">Loyer</td>
-                                <td id="preview-loyer" class="text-right p-3"></td>
+                            <tr class="border-t hover:bg-gray-50">
+                                <td class="p-3">Loyer Hors Charges</td>
+                                <td id="preview-loyer" class="text-right p-3 font-mono"></td>
                             </tr>
-                            <tr class="border-t">
-                                <td class="p-3">Charges</td>
-                                <td id="preview-charges" class="text-right p-3"></td>
+                            <tr class="border-t hover:bg-gray-50">
+                                <td class="p-3">Provisions pour Charges</td>
+                                <td id="preview-charges" class="text-right p-3 font-mono"></td>
                             </tr>
-                            <tr class="border-t bg-blue-50 text-blue-900 font-bold">
-                                <td class="p-3">TOTAL</td>
-                                <td id="preview-total" class="text-right p-3"></td>
+                            <tr class="border-t bg-blue-100 text-blue-900 font-extrabold text-xl">
+                                <td class="p-3">TOTAL PAYÉ</td>
+                                <td id="preview-total" class="text-right p-3 font-mono"></td>
                             </tr>
                         </tbody>
                     </table>
 
                     <!-- Signature et date -->
-                    <div class="text-center mt-auto">
-                        <p class="mb-8">Fait le <span id="preview-date-emission"></span></p>
-                        <p class="font-semibold" id="preview-signature"></p>
+                    <div class="text-right mt-auto">
+                        <p class="mb-4 text-lg font-medium">Fait à (à compléter), le <span id="preview-date-emission" class="font-bold"></span>.</p>
+                        <div class="mt-8">
+                            <p class="font-semibold text-lg border-t pt-2 inline-block px-8 border-gray-400" id="preview-signature">Le Propriétaire</p>
+                        </div>
                     </div>
                     <!-- Mentions légales (du modèle PDF) -->
                     <div class="text-xs text-gray-500 mt-12 pt-4 border-t">
-                        <p>Le paiement de la présente n'emporte pas présomption de paiement des termes antérieurs. Cette quittance ou ce reçu annule tous les reçus qui auraient pu être donnés pour acompte versé sur le présent terme. En cas de congé précédemment donné, cette quittance ou ce reçu représenterait l'indemnité d'occupation et ne saurait être considéré comme un titre d'occupation. Sous réserve d'encaissement.</p>
+                        <p>Le paiement de la présente n'emporte pas présomption de paiement des termes antérieurs. Cette quittance ou ce reçu annule tous les reçus qui auraient pu être donnés pour acompte versé sur le présent terme. En cas de congé précédemment donné, cette quittance ou ce reçu représenterait l'indemnité d'occupation et ne saurait être considéré comme un titre d'occupation. Sous réserve d'encaissement. Le bailleur certifie que le logement est libre de toute dette de loyer et de charges pour la période concernée.</p>
                     </div>
                 </section>
                 
                 <div class="card text-center mt-4 no-print grid grid-cols-2 gap-4">
-                    <button id="email-btn" class="btn btn-blue w-full">Envoyer par E-mail</button>
-                    <button id="print-btn" class="btn btn-primary w-full">Imprimer la Quittance</button>
+                    <button id="email-btn" class="btn btn-mail w-full">Envoyer par E-mail (Pré-rempli)</button>
+                    <button id="print-btn" class="btn btn-primary w-full">Imprimer/Générer PDF</button>
                 </div>
                 <div id="email-instruction" class="card text-sm p-3 mt-4 text-center text-gray-600 hidden no-print">
-                    ⚠️ **Étape manuelle requise :** Le PDF ne peut pas être joint automatiquement. N'oubliez pas d'utiliser le bouton **"Imprimer la Quittance"** (choisir 'Enregistrer en PDF') puis de glisser-déposer le fichier PDF dans l'e-mail pré-rempli.
+                    ⚠️ **Étape manuelle requise :** Le PDF ne peut pas être joint automatiquement. N'oubliez pas d'utiliser le bouton **"Imprimer/Générer PDF"** (choisir 'Enregistrer en PDF') puis de glisser-déposer le fichier PDF dans l'e-mail pré-rempli.
                 </div>
             </div>
         </main>
     </div>
+    
+    <!-- Conteneur pour les notifications toast -->
+    <div id="toast-container"></div>
 
-    <script>
-        // DONNÉES DE DÉPART POUR LES PROPRIÉTÉS
-        // Le stockage se fait dans le navigateur (localStorage) car c'est une version simple sans Cloud.
-        const LOCAL_STORAGE_KEY = 'multiPropertyData';
+    <!-- FIREBASE MODULE IMPORTS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, setDoc, deleteDoc, onSnapshot, collection, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        let propertiesData = loadInitialData();
+        // Variables globales pour Firebase et l'état de l'application
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+        let propertiesData = []; // Données des propriétés (vient de Firestore)
+        let chartInitialized = false;
 
-        function loadInitialData() {
-            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (savedData) {
-                try {
-                    return JSON.parse(savedData);
-                } catch (e) {
-                    console.error("Erreur de chargement des données locales.", e);
-                    localStorage.removeItem(LOCAL_STORAGE_KEY);
-                }
-            }
-            // Données par défaut si rien n'est trouvé
-            return [
-                { id: Date.now(), locataire: "SOLIHA SEINE ET MARNE", email: "soliha@example.com", telephone: "06 12 34 56 78", adresse: "76 rue dian fossey 77000 melun", loyer_hc: 448.85, charges: 91.00 },
-                { id: Date.now() + 1, locataire: "Jean Dupont", email: "jean.dupont@locataire.com", telephone: "07 98 76 54 32", adresse: "12 rue de Rivoli 75004 Paris", loyer_hc: 850.00, charges: 75.00 },
-                { id: Date.now() + 2, locataire: "Marie Martin", email: "marie.martin@locataire.com", telephone: "06 55 44 33 22", adresse: "25 quai Saint-Vincent 69001 Lyon", loyer_hc: 620.00, charges: 55.00 }
-            ];
-        }
-
-        function saveLocalData() {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(propertiesData));
-        }
+        // Récupération des variables d'environnement (MANDATORY)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Récupération des éléments HTML (Inputs et Zones d'affichage)
         const inputs = {
@@ -294,27 +335,29 @@
             locNom: document.getElementById('loc-nom'),
             locAdresse: document.getElementById('loc-adresse'),
             locEmail: document.getElementById('loc-email'), 
-            locTel: document.getElementById('loc-tel'),     
+            locTel: document.getElementById('loc-tel'), 
             saveBtn: document.getElementById('save-btn'),
             addNewBtn: document.getElementById('add-new-btn'),
             deleteBtn: document.getElementById('delete-btn'), 
-            actionMessage: document.getElementById('action-message'),
-            emailBtn: document.getElementById('email-btn'), // NOUVEAU
-            emailInstruction: document.getElementById('email-instruction'), // NOUVEAU
+            emailBtn: document.getElementById('email-btn'),
+            emailInstruction: document.getElementById('email-instruction'),
+            userInfo: document.getElementById('user-info'),
+            loadingSpinner: document.getElementById('loading-spinner'),
         };
 
         const previews = {
             propNom: document.getElementById('preview-prop-nom'),
             propContact: document.getElementById('preview-prop-contact'),
+            propContactSmall: document.getElementById('preview-prop-contact-small'),
             locNom: document.getElementById('preview-loc-nom'),
             locAdresse: document.getElementById('preview-loc-adresse'),
             locEmail: document.getElementById('preview-loc-email'), 
-            locTel: document.getElementById('preview-loc-tel'),     
+            locTel: document.getElementById('preview-loc-tel'), 
             periode: document.getElementById('preview-periode'),
             propNomText: document.getElementById('preview-prop-nom-text'),
             locAdresseText: document.getElementById('preview-loc-adresse-text'),
             locNomText: document.getElementById('preview-loc-nom-text'),
-            totalText: document.getElementById('total-text'),
+            totalText: document.getElementById('preview-total-text'),
             loyer: document.getElementById('preview-loyer'),
             charges: document.getElementById('preview-charges'),
             total: document.getElementById('preview-total'),
@@ -324,70 +367,131 @@
 
         let repartitionChart;
 
-        // Fonction pour remplir le menu déroulant
-        function populatePropertySelector(selectedIndex = 0) {
-            inputs.propertySelector.innerHTML = '';
-            
-            if (propertiesData.length === 0) {
-                 const option = document.createElement('option');
-                 option.value = -1;
-                 option.textContent = "--- Ajouter une propriété ---";
-                 inputs.propertySelector.appendChild(option);
-                 clearForm();
-                 inputs.deleteBtn.disabled = true; // Désactive la suppression si la liste est vide
-                 return;
-            }
+        // --- NOUVEAU: FONCTION UTILITAIRE DEBOUCE (Performance) ---
 
-            propertiesData.forEach((prop, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${prop.locataire} - ${prop.adresse}`; // Affichage Locataire + Adresse
-                inputs.propertySelector.appendChild(option);
-            });
-            
-            // Sélectionne le dernier élément enregistré ou le premier
-            inputs.propertySelector.value = Math.min(selectedIndex, propertiesData.length - 1); 
-            loadPropertyData(inputs.propertySelector.value);
-            inputs.deleteBtn.disabled = false; // Active la suppression si des éléments existent
-        }
-
-        // Fonction pour charger les données d'un bien sélectionné
-        function loadPropertyData(index) {
-            const prop = propertiesData[index];
-
-            if (prop) {
-                // Mise à jour des champs avec les données du bien
-                inputs.locNom.value = prop.locataire || '';
-                inputs.locAdresse.value = prop.adresse || '';
-                inputs.locEmail.value = prop.email || '';
-                inputs.locTel.value = prop.telephone || '';
-                inputs.loyer.value = prop.loyer_hc ? prop.loyer_hc.toFixed(2) : '0.00';
-                inputs.charges.value = prop.charges ? prop.charges.toFixed(2) : '0.00';
-            }
-            updatePreview();
+        /**
+         * Retourne une fonction qui ne sera exécutée qu'après 'delay' ms après son dernier appel.
+         */
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
         }
         
-        // Vider les champs pour l'ajout d'un nouveau bien
-        function clearForm() {
-            inputs.locNom.value = "";
-            inputs.locAdresse.value = "";
-            inputs.locEmail.value = "";
-            inputs.locTel.value = "";
-            inputs.loyer.value = "0.00";
-            inputs.charges.value = "0.00";
-            inputs.propertySelector.value = -1; 
-            inputs.actionMessage.textContent = "Saisissez les données du nouveau bien et cliquez sur 'Enregistrer les Modifs'.";
-            inputs.deleteBtn.disabled = true; // Désactive la suppression lors de la création
-            updatePreview();
+        // --- NOUVEAU: SYSTÈME DE NOTIFICATION TOAST (UX) ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 5000); // Le toast disparaît après 5 secondes (légèrement plus court que l'animation)
         }
 
-        // Sauvegarder ou mettre à jour un bien
-        function savePropertyData() {
-            const selectedIndex = inputs.propertySelector.value;
+
+        // --- FIREBASE & AUTHENTIFICATION ---
+
+        function getCollectionPath() {
+            if (!userId) {
+                console.error("User ID is not set. Cannot form collection path.");
+                return null;
+            }
+            // Chemin de la collection privée : /artifacts/{appId}/users/{userId}/properties
+            return collection(db, 'artifacts', appId, 'users', userId, 'properties');
+        }
+
+        async function initFirebaseAndAuth() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                // Authentification
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Écouteur de l'état d'authentification
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        inputs.userInfo.innerHTML = `Utilisateur ID: <span class="font-mono text-gray-700">${userId}</span>`;
+                        inputs.loadingSpinner.classList.add('hidden');
+                        isAuthReady = true;
+                        subscribeToProperties();
+                        showToast("Connexion Cloud réussie.", 'success');
+                    } else {
+                        inputs.userInfo.textContent = "Déconnecté. Veuillez recharger si le problème persiste.";
+                    }
+                });
+
+            } catch (error) {
+                console.error("Erreur d'initialisation de Firebase ou d'authentification:", error);
+                inputs.userInfo.innerHTML = `<span class="text-red-500">Erreur de connexion.</span>`;
+                inputs.propertySelector.innerHTML = '<option value="-1">Erreur de chargement</option>';
+                showToast("Erreur lors de la connexion Cloud.", 'error');
+            }
+        }
+
+        // --- GESTION DES DONNÉES FIRESTORE (CRUD via onSnapshot) ---
+
+        function subscribeToProperties() {
+            const propertiesCol = getCollectionPath();
+            if (!propertiesCol) return;
+
+            onSnapshot(query(propertiesCol), (snapshot) => {
+                const newPropertiesData = [];
+                snapshot.forEach(doc => {
+                    newPropertiesData.push({
+                        ...doc.data(),
+                        id: doc.id,
+                    });
+                });
+                
+                propertiesData = newPropertiesData;
+                
+                // Conserver la sélection actuelle si elle existe encore après la mise à jour
+                const previousIndex = parseInt(inputs.propertySelector.value);
+                let newIndex = 0; // Par défaut, on sélectionne le premier
+
+                if (propertiesData.length > 0) {
+                     // Si l'ancienne propriété existe toujours dans la liste, on la resélectionne
+                     const oldId = propertiesData[previousIndex]?.id;
+                     const foundIndex = propertiesData.findIndex(p => p.id === oldId);
+                     newIndex = foundIndex !== -1 ? foundIndex : 0; 
+                }
+
+                populatePropertySelector(newIndex);
+                inputs.propertySelector.disabled = false;
+
+                if (propertiesData.length === 0) {
+                    showToast("Veuillez ajouter votre première propriété.", 'info');
+                }
+                
+            }, (error) => {
+                console.error("Erreur de récupération des données en temps réel:", error);
+                showToast("Erreur de synchronisation des propriétés.", 'error');
+            });
+        }
+
+        async function savePropertyData() {
+            if (!isAuthReady) {
+                showToast("Veuillez attendre la connexion au service de sauvegarde.", 'error');
+                return;
+            }
+
+            const selectedIndex = parseInt(inputs.propertySelector.value);
             
-            // Validation simple pour ne pas enregistrer un bien vide
             if (inputs.locNom.value === "" || inputs.locAdresse.value === "") {
-                inputs.actionMessage.textContent = "Veuillez remplir au moins le Nom du Locataire et l'Adresse.";
+                showToast("Veuillez remplir au moins le Nom du Locataire et l'Adresse.", 'error');
                 return;
             }
 
@@ -396,46 +500,120 @@
                 email: inputs.locEmail.value,
                 telephone: inputs.locTel.value,
                 adresse: inputs.locAdresse.value,
+                // Assurer que les nombres sont stockés comme des nombres (et non des strings)
                 loyer_hc: parseFloat(inputs.loyer.value) || 0,
-                charges: parseFloat(inputs.charges.value) || 0
+                charges: parseFloat(inputs.charges.value) || 0,
+                updatedAt: serverTimestamp(),
             };
-            
-            if (selectedIndex !== null && selectedIndex !== "" && selectedIndex !== '-1' && selectedIndex < propertiesData.length) {
-                // MISE À JOUR d'un bien existant
-                propertyData.id = propertiesData[selectedIndex].id;
-                propertiesData[selectedIndex] = propertyData;
-                inputs.actionMessage.textContent = "Bien mis à jour avec succès (enregistré localement).";
-                populatePropertySelector(selectedIndex);
-            } else {
-                // AJOUT d'un nouveau bien
-                propertyData.id = Date.now();
-                propertiesData.push(propertyData);
-                inputs.actionMessage.textContent = "Nouveau bien ajouté avec succès (enregistré localement).";
-                populatePropertySelector(propertiesData.length - 1);
+
+            try {
+                if (selectedIndex !== -1 && selectedIndex < propertiesData.length) {
+                    // MISE À JOUR d'un bien existant
+                    const propToUpdate = propertiesData[selectedIndex];
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'properties', propToUpdate.id);
+                    await setDoc(docRef, propertyData, { merge: true }); 
+                    showToast("Bien mis à jour avec succès !", 'success');
+                } else {
+                    // AJOUT d'un nouveau bien
+                    const propertiesCol = getCollectionPath();
+                    await addDoc(propertiesCol, propertyData);
+                    showToast("Nouveau bien ajouté avec succès !", 'success');
+                    // L'onSnapshot gérera la sélection du nouveau bien
+                }
+            } catch (e) {
+                console.error("Erreur lors de la sauvegarde du bien:", e);
+                showToast("Échec de l'enregistrement. (Erreur technique)", 'error');
             }
-            saveLocalData();
         }
 
-        // NOUVEAU: Fonction pour supprimer le bien sélectionné
-        function deleteSelectedProperty() {
-            const selectedIndex = inputs.propertySelector.value;
-            
-            if (selectedIndex === null || selectedIndex === "" || selectedIndex === '-1' || selectedIndex >= propertiesData.length) {
-                inputs.actionMessage.textContent = "Aucun bien sélectionné à supprimer.";
+        async function deleteSelectedProperty() {
+            if (!isAuthReady || propertiesData.length === 0) return;
+
+            const selectedIndex = parseInt(inputs.propertySelector.value);
+            if (selectedIndex === -1 || selectedIndex >= propertiesData.length) {
+                showToast("Aucun bien sélectionné à supprimer.", 'info');
                 return;
             }
 
-            // Simuler une confirmation (dans un environnement réel, on utiliserait une modale)
-            const confirmDelete = true; 
-            if (confirmDelete) {
-                propertiesData.splice(selectedIndex, 1); // Supprime l'élément du tableau
-                saveLocalData(); // Sauvegarde le tableau mis à jour
-                inputs.actionMessage.textContent = "Bien supprimé avec succès.";
-                populatePropertySelector(0); // Recharge la liste et sélectionne le premier élément
+            // Nous allons utiliser un toast pour simuler la confirmation
+            const propName = propertiesData[selectedIndex].locataire;
+            showToast(`Suppression de ${propName}...`, 'info'); 
+
+            const propToDelete = propertiesData[selectedIndex];
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'properties', propToDelete.id);
+                await deleteDoc(docRef);
+                showToast("Bien supprimé avec succès.", 'success');
+            } catch (e) {
+                console.error("Erreur lors de la suppression du bien:", e);
+                showToast("Échec de la suppression. (Erreur technique)", 'error');
             }
         }
         
-        // NOUVEAU: Fonction pour générer l'e-mail
+        // --- GESTION DE L'UI ---
+
+        function populatePropertySelector(selectedIndex = 0) {
+            inputs.propertySelector.innerHTML = '';
+            
+            if (propertiesData.length === 0) {
+                 const option = document.createElement('option');
+                 option.value = -1;
+                 option.textContent = "--- Ajouter une propriété ---";
+                 inputs.propertySelector.appendChild(option);
+                 clearForm(false); 
+                 inputs.deleteBtn.disabled = true;
+                 return;
+            }
+
+            propertiesData.forEach((prop, index) => {
+                const option = document.createElement('option');
+                option.value = index; 
+                option.textContent = `${prop.locataire} - ${prop.adresse.substring(0, 30)}...`; 
+                inputs.propertySelector.appendChild(option);
+            });
+            
+            inputs.propertySelector.value = Math.min(selectedIndex, propertiesData.length - 1); 
+            loadPropertyData(inputs.propertySelector.value);
+            inputs.deleteBtn.disabled = false;
+        }
+
+        function loadPropertyData(index) {
+            const prop = propertiesData[index];
+
+            if (prop) {
+                inputs.locNom.value = prop.locataire || '';
+                inputs.locAdresse.value = prop.adresse || '';
+                inputs.locEmail.value = prop.email || '';
+                inputs.locTel.value = prop.telephone || '';
+                // Utiliser prop.loyer_hc pour s'assurer que c'est le format stocké
+                inputs.loyer.value = prop.loyer_hc ? prop.loyer_hc.toFixed(2) : '0.00';
+                inputs.charges.value = prop.charges ? prop.charges.toFixed(2) : '0.00';
+            }
+            updatePreview();
+        }
+        
+        function clearForm(shouldResetDates = true) {
+            inputs.locNom.value = "";
+            inputs.locAdresse.value = "";
+            inputs.locEmail.value = "";
+            inputs.locTel.value = "";
+            inputs.loyer.value = "0.00";
+            inputs.charges.value = "0.00";
+            if (shouldResetDates) {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                inputs.dateEmission.value = `${yyyy}-${mm}-${dd}`;
+            }
+
+            inputs.propertySelector.value = -1; 
+            showToast("Prêt à ajouter un nouveau bien.", 'info');
+            inputs.deleteBtn.disabled = true;
+            updatePreview();
+        }
+        
         function sendQuittanceEmail() {
             const locataireEmail = inputs.locEmail.value;
             const locataireName = inputs.locNom.value;
@@ -443,68 +621,84 @@
             const total = previews.total.textContent;
             
             if (!locataireEmail || !locataireEmail.includes('@')) {
-                inputs.actionMessage.textContent = "L'adresse e-mail du locataire est manquante ou invalide. Veuillez la renseigner.";
+                showToast("L'adresse e-mail du locataire est manquante ou invalide.", 'error');
                 return;
             }
 
-            const subject = `Votre Quittance de Loyer pour la période ${periode}`;
-            const body = `Bonjour ${locataireName},\n\nVeuillez trouver ci-joint votre quittance de loyer d'un montant total de ${total} pour la période ${periode}.\n\nCordialement,\n${inputs.propNom.value}`;
+            const subject = `[Quittance] Votre Quittance de Loyer pour la période ${periode}`;
+            const body = `Bonjour ${locataireName},\n\nVeuillez trouver ci-joint votre quittance de loyer d'un montant total de ${total} pour la période ${periode}.\n\nCeci est un document officiel. Veuillez imprimer ou conserver ce PDF.\n\nCordialement,\n${inputs.propNom.value}`;
 
-            // Utilisation du protocole mailto: pour ouvrir le client mail
             const mailtoLink = `mailto:${locataireEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             
-            // Afficher l'instruction de sauvegarde PDF
             inputs.emailInstruction.classList.remove('hidden');
             
             window.location.href = mailtoLink;
         }
 
-
         // Fonction de conversion de nombre à toutes lettres (Français)
         function numberToWordsFrench(n) {
             if (n === 0) return 'Zéro Euro';
-            const s = n.toString();
+            const s = n.toFixed(2).toString();
             let part = s.split('.');
             let euros = parseInt(part[0]);
-            let centimes = part.length > 1 ? parseInt(part[1].padEnd(2, '0')) : 0;
+            let centimes = parseInt(part[1]);
 
             const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
             const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
             const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
 
             function convert(num) {
+                if (num === 0) return '';
                 if (num < 10) return units[num];
                 if (num < 20) return teens[num - 10];
                 if (num < 70) {
                     let ten = Math.floor(num / 10);
                     let unit = num % 10;
-                    if (ten === 6 && unit <= 9) { return 'soixante-' + convert(num - 60); }
-                    return tens[ten] + (unit > 0 ? (unit === 1 && ten === 7 || ten === 9 ? '-et-' : '-') + units[unit] : '');
+                    if (ten === 6) { return 'soixante' + (unit > 0 ? ('-' + convert(num - 60)) : ''); }
+                    let res = tens[ten] + (unit > 0 ? (unit === 1 && ten === 7 || ten === 9 ? '-et-' : '-') + convert(unit) : '');
+                    return res.replace(/-$/, ''); 
                 }
                 if (num < 80) { return 'soixante-' + convert(num - 60); }
-                if (num < 90) { return 'quatre-vingt' + (num > 80 ? ('-' + convert(num - 80)) : ''); }
+                if (num < 90) { return 'quatre-vingt' + (num > 80 ? ('-' + convert(num - 80)) : (num === 80 ? '' : '')); }
                 if (num < 100) { return 'quatre-vingt-dix-' + convert(num - 90); }
                 if (num < 200) { return 'cent' + (num > 100 ? ' ' + convert(num - 100) : ''); }
                 if (num < 1000) {
-                   let cent = Math.floor(num / 100);
-                   let reste = num % 100;
-                   let res = units[cent] + (cent > 1 && reste === 0 ? ' cents' : ' cent');
-                   return res + (reste > 0 ? ' ' + convert(reste) : '');
+                    let cent = Math.floor(num / 100);
+                    let reste = num % 100;
+                    let res = (cent === 1 ? 'cent' : units[cent] + ' cents');
+                    if (cent > 1 && reste === 0) res = units[cent] + ' cents'; else if (cent > 1 && reste > 0) res = units[cent] + ' cent'; else if (cent === 1 && reste > 0) res = 'cent'; else if (cent === 1 && reste === 0) res = 'cent';
+                    return (cent > 0 && reste > 0 ? res + ' ' : (cent > 0 && reste === 0 ? res : '')) + convert(reste);
                 }
                 if (num < 1000000) {
                     let mille = Math.floor(num / 1000);
                     let reste = num % 1000;
-                    let res = (mille > 1 ? convert(mille) + ' mille' : 'mille');
+                    let res = (mille === 1 ? 'mille' : convert(mille) + ' mille');
                     return res + (reste > 0 ? ' ' + convert(reste) : '');
                 }
                 return '';
             }
             
-            let euroText = convert(euros).trim() + (euros > 1 ? ' Euros' : ' Euro');
-            let centimeText = centimes > 0 ? (centimes > 1 ? ' et ' + convert(centimes) + ' centimes' : ' et un centime') : '';
-            let result = euroText + centimeText;
-            return result.charAt(0).toUpperCase() + result.slice(1);
+            let euroText = convert(euros).trim().replace(' cents', ' cent');
+            if (euros > 0 && euros < 200 && euroText.endsWith(' cent')) euroText = euroText.slice(0, -5) + (euros === 100 ? ' cent' : ' cent');
+            if (euros > 1 && euroText.endsWith('cent')) euroText += 's';
+
+            let centimeText = '';
+            if (centimes > 0) {
+                 if (centimes < 10 && centimes > 0) centimes = centimes * 10;
+                 let centimeWord = convert(centimes).trim();
+                 centimeText = centimes === 1 ? ' et un centime' : ' et ' + centimeWord + ' centimes';
+            }
+
+            let result = euroText + (euros > 1 ? ' Euros' : ' Euro') + centimeText;
+            return result.charAt(0).toUpperCase() + result.slice(1).replace(/\s+/g, ' ');
         }
+        
+        // NOUVEAU: Fonction d'affectation sécurisée
+        const safeSetContent = (element, value) => {
+            if (element) {
+                element.textContent = value;
+            }
+        };
 
         // Fonction principale de mise à jour de l'aperçu
         function updatePreview() {
@@ -514,41 +708,51 @@
             
             const periodeValue = inputs.periode.value;
             const [year, month] = periodeValue.split('-');
-            const startDate = `01-${month}-${year}`;
-            const lastDay = new Date(year, month, 0).getDate();
-            const endDate = `${lastDay}-${month}-${year}`;
+            const monthName = new Date(year, month - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-            // Mise à jour de l'aperçu Quittance
-            previews.propNom.textContent = inputs.propNom.value;
-            previews.propContact.textContent = inputs.propContact.value;
-            previews.locNom.textContent = inputs.locNom.value;
-            previews.locAdresse.textContent = inputs.locAdresse.value;
-            previews.locEmail.textContent = inputs.locEmail.value; 
-            previews.locTel.textContent = inputs.locTel.value;     
-            previews.periode.textContent = `du ${startDate} au ${endDate}`;
+            // Mise à jour de l'aperçu Quittance (utilise l'affectation sécurisée)
+            safeSetContent(previews.propNom, inputs.propNom.value);
+            safeSetContent(previews.propContact, inputs.propContact.value);
+            safeSetContent(previews.propContactSmall, inputs.propContact.value);
+            safeSetContent(previews.locNom, inputs.locNom.value);
+            safeSetContent(previews.locAdresse, inputs.locAdresse.value);
+            safeSetContent(previews.locEmail, inputs.locEmail.value); 
+            safeSetContent(previews.locTel, inputs.locTel.value); 
             
-            previews.propNomText.textContent = inputs.propNom.value;
-            previews.locAdresseText.textContent = inputs.locAdresse.value;
-            previews.locNomText.textContent = inputs.locNom.value;
+            safeSetContent(previews.periode, `Mois de ${monthName}`);
             
-            previews.loyer.textContent = `${loyer.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
-            previews.charges.textContent = `${charges.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
-            previews.total.textContent = `${total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
-            previews.totalText.textContent = numberToWordsFrench(total);
+            safeSetContent(previews.propNomText, inputs.propNom.value);
+            safeSetContent(previews.locAdresseText, inputs.locAdresse.value);
+            safeSetContent(previews.locNomText, inputs.locNom.value);
+            
+            const totalWords = numberToWordsFrench(total);
+
+            // Formatage monétaire
+            const loyerFormatted = `${loyer.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+            const chargesFormatted = `${charges.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+            const totalFormatted = `${total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`;
+
+            safeSetContent(previews.loyer, loyerFormatted);
+            safeSetContent(previews.charges, chargesFormatted);
+            safeSetContent(previews.total, totalFormatted);
+            safeSetContent(previews.totalText, `${totalWords} (${totalFormatted})`);
 
             const dateEmissionValue = inputs.dateEmission.value;
             if(dateEmissionValue) {
                 const [y, m, d] = dateEmissionValue.split('-');
-                previews.dateEmission.textContent = `${d}-${m}-${y}`;
+                const formattedDate = `${d} ${new Date(y, m - 1, d).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`;
+                safeSetContent(previews.dateEmission, formattedDate);
             }
 
-            previews.signature.textContent = inputs.propNom.value;
+            safeSetContent(previews.signature, inputs.propNom.value);
             
             updateChart(loyer, charges);
         }
         
         // Initialisation du graphique Chart.js
         function initChart() {
+            if (chartInitialized) return;
+
             const ctx = document.getElementById('repartitionChart').getContext('2d');
             repartitionChart = new Chart(ctx, {
                 type: 'doughnut',
@@ -556,7 +760,7 @@
                     labels: ['Loyer', 'Charges'],
                     datasets: [{
                         data: [0, 0],
-                        backgroundColor: ['#4a90e2', '#f5a623'], 
+                        backgroundColor: ['#3b82f6', '#f59e0b'], /* Couleurs coordonnées */
                         borderColor: '#ffffff',
                         borderWidth: 4,
                     }]
@@ -581,6 +785,7 @@
                     }
                 }
             });
+            chartInitialized = true;
         }
 
         // Mise à jour du graphique
@@ -600,26 +805,31 @@
             const dd = String(today.getDate()).padStart(2, '0');
             inputs.dateEmission.value = `${yyyy}-${mm}-${dd}`;
 
-            // Écouteurs pour la mise à jour des champs
+            // Initialisation de Firebase et de l'authentification
+            initFirebaseAndAuth();
+
+            // Crée une version debounced de updatePreview avec un délai de 250ms
+            const debouncedUpdatePreview = debounce(updatePreview, 250); 
+
+            // Écouteurs pour la mise à jour des champs (utilise la version debounced)
             const updatableInputs = [inputs.periode, inputs.dateEmission, inputs.loyer, inputs.charges, inputs.propNom, inputs.propContact, inputs.locNom, inputs.locAdresse, inputs.locEmail, inputs.locTel];
             updatableInputs.forEach(input => {
-                input.addEventListener('keyup', updatePreview);
-                input.addEventListener('change', updatePreview);
+                input.addEventListener('keyup', debouncedUpdatePreview);
+                input.addEventListener('change', debouncedUpdatePreview);
             });
             
-            // Événements du sélecteur et des boutons de gestion
+            // Événements des boutons de gestion
             inputs.propertySelector.addEventListener('change', (e) => loadPropertyData(e.target.value));
             inputs.saveBtn.addEventListener('click', savePropertyData);
-            inputs.addNewBtn.addEventListener('click', clearForm);
+            inputs.addNewBtn.addEventListener('click', () => clearForm(false)); 
             inputs.deleteBtn.addEventListener('click', deleteSelectedProperty); 
-            inputs.emailBtn.addEventListener('click', sendQuittanceEmail); // NOUVEAU
+            inputs.emailBtn.addEventListener('click', sendQuittanceEmail);
 
             // Bouton d'impression
             document.getElementById('print-btn').addEventListener('click', () => { window.print(); });
 
             initChart();
-            populatePropertySelector(); // Charge les données locales ou initiales
-            updatePreview(); 
+            updatePreview(); // Mise à jour initiale
         });
     </script>
 </body>
