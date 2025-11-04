@@ -111,6 +111,7 @@
         .toast-success { background-color: #10b981; color: white; }
         .toast-error { background-color: #ef4444; color: white; }
         .toast-info { background-color: #3b82f6; color: white; }
+        .toast-warning { background-color: #f59e0b; color: white; }
 
         @keyframes fadeInOut {
             0% { opacity: 0; transform: translateY(100%); }
@@ -141,7 +142,7 @@
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 no-print">
             <h1 class="text-3xl font-bold text-gray-900">Générateur de Quittance Multi-Propriété</h1>
-            <p class="text-gray-600 mt-1">Gérez vos biens et générez des quittances personnalisées. (Sauvegarde Cloud via Firestore)</p>
+            <p id="mode-subtitle" class="text-gray-600 mt-1">Gérez vos biens et générez des quittances personnalisées. (Sauvegarde Cloud via Firestore)</p>
              <p id="user-info" class="text-xs mt-2 text-gray-500">
                 <span id="loading-spinner" class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-blue-500 mr-2"></span>
                 Connexion au Cloud...
@@ -304,19 +305,27 @@
     <!-- Conteneur pour les notifications toast -->
     <div id="toast-container"></div>
 
-    <!-- FIREBASE MODULE IMPORTS -->
+    <!-- FIREBASE MODULE IMPORTS (Laisser les imports en place pour le mode Cloud) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, setDoc, deleteDoc, onSnapshot, collection, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Variables globales pour Firebase et l'état de l'application
+        // --- CONSTANTES ET VARIABLES D'ÉTAT ---
+        const LOCAL_STORAGE_KEY = 'multiPropertyDataLocal';
+        const DEFAULT_PROPERTIES = [
+             { id: 'default-1', locataire: "SOLIHA SEINE ET MARNE", email: "soliha@example.com", telephone: "06 12 34 56 78", adresse: "76 rue dian fossey 77000 melun", loyer_hc: 448.85, charges: 91.00 },
+             { id: 'default-2', locataire: "Jean Dupont", email: "jean.dupont@locataire.com", telephone: "07 98 76 54 32", adresse: "12 rue de Rivoli 75004 Paris", loyer_hc: 850.00, charges: 75.00 },
+        ];
+
+
         let db;
         let auth;
         let userId = null;
         let isAuthReady = false;
-        let propertiesData = []; // Données des propriétés (vient de Firestore)
+        let propertiesData = []; // Données des propriétés
         let chartInitialized = false;
+        let isCloudMode = false; // NOUVEAU: Indicateur de mode de fonctionnement
 
         // Récupération des variables d'environnement (MANDATORY)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -343,6 +352,7 @@
             emailInstruction: document.getElementById('email-instruction'),
             userInfo: document.getElementById('user-info'),
             loadingSpinner: document.getElementById('loading-spinner'),
+            modeSubtitle: document.getElementById('mode-subtitle'), // NOUVEAU
         };
 
         const previews = {
@@ -367,11 +377,14 @@
 
         let repartitionChart;
 
-        // --- NOUVEAU: FONCTION UTILITAIRE DEBOUCE (Performance) ---
+        // --- UTILS ---
 
-        /**
-         * Retourne une fonction qui ne sera exécutée qu'après 'delay' ms après son dernier appel.
-         */
+        const safeSetContent = (element, value) => {
+            if (element) {
+                element.textContent = value;
+            }
+        };
+
         function debounce(func, delay) {
             let timeout;
             return function(...args) {
@@ -380,7 +393,6 @@
             };
         }
         
-        // --- NOUVEAU: SYSTÈME DE NOTIFICATION TOAST (UX) ---
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -391,46 +403,96 @@
 
             setTimeout(() => {
                 toast.remove();
-            }, 5000); // Le toast disparaît après 5 secondes (légèrement plus court que l'animation)
+            }, 5000); 
         }
 
+        // --- LOGIQUE HORS-LIGNE (LOCAL STORAGE) ---
 
-        // --- FIREBASE & AUTHENTIFICATION ---
+        function loadLocalData() {
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedData) {
+                try {
+                    propertiesData = JSON.parse(savedData);
+                } catch (e) {
+                    console.error("Erreur de chargement des données locales.", e);
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    propertiesData = DEFAULT_PROPERTIES;
+                }
+            } else {
+                propertiesData = DEFAULT_PROPERTIES;
+            }
+            populatePropertySelector(0);
+        }
+
+        function saveLocalData() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(propertiesData));
+        }
+
+        function saveLocalProperty(propertyData, selectedIndex) {
+            if (selectedIndex !== -1 && selectedIndex < propertiesData.length) {
+                // MISE À JOUR d'un bien existant
+                propertyData.id = propertiesData[selectedIndex].id;
+                propertiesData[selectedIndex] = propertyData;
+                showToast("Bien mis à jour (sauvegardé localement).", 'warning');
+                populatePropertySelector(selectedIndex);
+            } else {
+                // AJOUT d'un nouveau bien
+                propertyData.id = `local-${Date.now()}`;
+                propertiesData.push(propertyData);
+                showToast("Nouveau bien ajouté (sauvegardé localement).", 'warning');
+                populatePropertySelector(propertiesData.length - 1);
+            }
+            saveLocalData();
+        }
+
+        function deleteLocalProperty(selectedIndex) {
+             if (selectedIndex !== -1 && selectedIndex < propertiesData.length) {
+                propertiesData.splice(selectedIndex, 1);
+                showToast("Bien supprimé (localement).", 'warning');
+                saveLocalData();
+                populatePropertySelector(0);
+            }
+        }
+
+        // --- FIREBASE & AUTHENTIFICATION (MODE CLOUD) ---
 
         function getCollectionPath() {
             if (!userId) {
                 console.error("User ID is not set. Cannot form collection path.");
                 return null;
             }
-            // Chemin de la collection privée : /artifacts/{appId}/users/{userId}/properties
             return collection(db, 'artifacts', appId, 'users', userId, 'properties');
         }
 
         async function initFirebaseAndAuth() {
-            try {
-                // CORRECTION: Vérifier la configuration Firebase avant de l'initialiser
-                if (!firebaseConfig) {
-                    inputs.userInfo.innerHTML = `<span class="text-red-500 font-bold">Erreur : Configuration Cloud absente. (firebaseConfig est null)</span>`;
-                    inputs.loadingSpinner.classList.add('hidden');
-                    showToast("Erreur critique : La configuration Cloud est manquante.", 'error');
-                    return; // Arrêter l'initialisation si la configuration est absente
-                }
+            // 1. Vérification de la configuration
+            if (!firebaseConfig) {
+                isCloudMode = false;
+                inputs.modeSubtitle.textContent = "Gérez vos biens. (Mode HORS-LIGNE - Sauvegarde Locale)";
+                inputs.userInfo.innerHTML = `<span class="text-yellow-700 font-bold">⚠️ Mode HORS-LIGNE : Configuration Cloud absente.</span>`;
+                inputs.loadingSpinner.classList.add('hidden');
+                loadLocalData(); // Bascule en mode local
+                showToast("Démarrage en mode Hors-Ligne. Les données sont stockées dans ce navigateur.", 'warning');
+                return; // Arrêter l'initialisation Firebase
+            }
 
+            // 2. Tente la connexion Cloud
+            isCloudMode = true;
+            try {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
-                // Authentification
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
                 }
 
-                // Écouteur de l'état d'authentification
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
+                        inputs.modeSubtitle.textContent = "Gérez vos biens. (Sauvegarde CLOUD via Firestore)";
                         inputs.userInfo.innerHTML = `Utilisateur ID: <span class="font-mono text-gray-700">${userId}</span>`;
                         inputs.loadingSpinner.classList.add('hidden');
                         isAuthReady = true;
@@ -443,35 +505,40 @@
 
             } catch (error) {
                 console.error("Erreur d'initialisation de Firebase ou d'authentification:", error);
-                inputs.userInfo.innerHTML = `<span class="text-red-500">Erreur de connexion au Cloud. (Détails en console)</span>`;
-                inputs.propertySelector.innerHTML = '<option value="-1">Erreur de chargement</option>';
-                showToast("Erreur lors de la connexion Cloud. Veuillez vérifier votre connexion.", 'error');
+                
+                // En cas d'échec de la connexion Cloud, basculer en mode local pour garantir l'utilisabilité
+                isCloudMode = false;
+                inputs.modeSubtitle.textContent = "Gérez vos biens. (Mode HORS-LIGNE - Sauvegarde Locale)";
+                inputs.userInfo.innerHTML = `<span class="text-red-500 font-bold">❌ Erreur Cloud. Bascule en mode Hors-Ligne.</span>`;
+                inputs.loadingSpinner.classList.add('hidden');
+                loadLocalData(); 
+                showToast("Échec de la connexion Cloud. Les données sont stockées localement.", 'error');
             }
         }
 
-        // --- GESTION DES DONNÉES FIRESTORE (CRUD via onSnapshot) ---
+        // --- GESTION DES DONNÉES (UNIFIÉE) ---
 
         function subscribeToProperties() {
+            if (!isCloudMode) {
+                loadLocalData(); // Utilise la fonction locale si mode hors-ligne
+                return;
+            }
+            
+            // Logique de souscription Firestore
             const propertiesCol = getCollectionPath();
             if (!propertiesCol) return;
 
             onSnapshot(query(propertiesCol), (snapshot) => {
                 const newPropertiesData = [];
                 snapshot.forEach(doc => {
-                    newPropertiesData.push({
-                        ...doc.data(),
-                        id: doc.id,
-                    });
+                    newPropertiesData.push({ ...doc.data(), id: doc.id });
                 });
                 
                 propertiesData = newPropertiesData;
                 
-                // Conserver la sélection actuelle si elle existe encore après la mise à jour
                 const previousIndex = parseInt(inputs.propertySelector.value);
-                let newIndex = 0; // Par défaut, on sélectionne le premier
-
+                let newIndex = 0; 
                 if (propertiesData.length > 0) {
-                     // Si l'ancienne propriété existe toujours dans la liste, on la resélectionne
                      const oldId = propertiesData[previousIndex]?.id;
                      const foundIndex = propertiesData.findIndex(p => p.id === oldId);
                      newIndex = foundIndex !== -1 ? foundIndex : 0; 
@@ -486,76 +553,86 @@
                 
             }, (error) => {
                 console.error("Erreur de récupération des données en temps réel:", error);
-                showToast("Erreur de synchronisation des propriétés.", 'error');
+                showToast("Erreur de synchronisation des propriétés Cloud.", 'error');
             });
         }
 
-        async function savePropertyData() {
-            if (!isAuthReady) {
-                showToast("Veuillez attendre la connexion au service de sauvegarde.", 'error');
-                return;
-            }
-
-            const selectedIndex = parseInt(inputs.propertySelector.value);
-            
-            if (inputs.locNom.value === "" || inputs.locAdresse.value === "") {
-                showToast("Veuillez remplir au moins le Nom du Locataire et l'Adresse.", 'error');
-                return;
-            }
-
+        async function handleSaveProperty() {
             const propertyData = {
                 locataire: inputs.locNom.value,
                 email: inputs.locEmail.value,
                 telephone: inputs.locTel.value,
                 adresse: inputs.locAdresse.value,
-                // Assurer que les nombres sont stockés comme des nombres (et non des strings)
                 loyer_hc: parseFloat(inputs.loyer.value) || 0,
                 charges: parseFloat(inputs.charges.value) || 0,
-                updatedAt: serverTimestamp(),
             };
 
-            try {
-                if (selectedIndex !== -1 && selectedIndex < propertiesData.length) {
-                    // MISE À JOUR d'un bien existant
-                    const propToUpdate = propertiesData[selectedIndex];
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'properties', propToUpdate.id);
-                    await setDoc(docRef, propertyData, { merge: true }); 
-                    showToast("Bien mis à jour avec succès !", 'success');
-                } else {
-                    // AJOUT d'un nouveau bien
-                    const propertiesCol = getCollectionPath();
-                    await addDoc(propertiesCol, propertyData);
-                    showToast("Nouveau bien ajouté avec succès !", 'success');
-                    // L'onSnapshot gérera la sélection du nouveau bien
+            const selectedIndex = parseInt(inputs.propertySelector.value);
+
+            if (inputs.locNom.value === "" || inputs.locAdresse.value === "") {
+                showToast("Veuillez remplir au moins le Nom du Locataire et l'Adresse.", 'error');
+                return;
+            }
+
+            if (isCloudMode) {
+                if (!isAuthReady) {
+                    showToast("Veuillez attendre la connexion au service de sauvegarde Cloud.", 'error');
+                    return;
                 }
-            } catch (e) {
-                console.error("Erreur lors de la sauvegarde du bien:", e);
-                showToast("Échec de l'enregistrement. (Erreur technique)", 'error');
+
+                try {
+                    if (selectedIndex !== -1 && selectedIndex < propertiesData.length) {
+                        // MISE À JOUR CLOUD
+                        const propToUpdate = propertiesData[selectedIndex];
+                        const docRef = doc(db, 'artifacts', appId, 'users', userId, 'properties', propToUpdate.id);
+                        await setDoc({ ...propertyData, updatedAt: serverTimestamp() }, { merge: true }); 
+                        showToast("Bien mis à jour avec succès sur le Cloud !", 'success');
+                    } else {
+                        // AJOUT CLOUD
+                        const propertiesCol = getCollectionPath();
+                        await addDoc(propertiesCol, { ...propertyData, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+                        showToast("Nouveau bien ajouté avec succès sur le Cloud !", 'success');
+                    }
+                } catch (e) {
+                    console.error("Erreur lors de la sauvegarde du bien Cloud:", e);
+                    showToast("Échec de l'enregistrement Cloud. (Erreur technique)", 'error');
+                }
+            } else {
+                // Mode HORS-LIGNE
+                saveLocalProperty(propertyData, selectedIndex);
             }
         }
 
-        async function deleteSelectedProperty() {
-            if (!isAuthReady || propertiesData.length === 0) return;
+        async function handleDeleteProperty() {
+            if (propertiesData.length === 0) return;
 
             const selectedIndex = parseInt(inputs.propertySelector.value);
             if (selectedIndex === -1 || selectedIndex >= propertiesData.length) {
                 showToast("Aucun bien sélectionné à supprimer.", 'info');
                 return;
             }
-
-            // Nous allons utiliser un toast pour simuler la confirmation
+            
             const propName = propertiesData[selectedIndex].locataire;
-            showToast(`Suppression de ${propName}...`, 'info'); 
+            
+            if (isCloudMode) {
+                if (!isAuthReady) {
+                    showToast("Veuillez attendre la connexion au service de sauvegarde Cloud.", 'error');
+                    return;
+                }
 
-            const propToDelete = propertiesData[selectedIndex];
-
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'properties', propToDelete.id);
-                await deleteDoc(docRef);
-                showToast("Bien supprimé avec succès.", 'success');
-            } catch (e) {
-                console.error("Erreur lors de la suppression du bien:", e);
-                showToast("Échec de la suppression. (Erreur technique)", 'error');
+                showToast(`Suppression de ${propName} sur le Cloud...`, 'info'); 
+                const propToDelete = propertiesData[selectedIndex];
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'properties', propToDelete.id);
+                    await deleteDoc(docRef);
+                    showToast("Bien supprimé avec succès du Cloud.", 'success');
+                } catch (e) {
+                    console.error("Erreur lors de la suppression du bien Cloud:", e);
+                    showToast("Échec de la suppression Cloud. (Erreur technique)", 'error');
+                }
+            } else {
+                // Mode HORS-LIGNE
+                deleteLocalProperty(selectedIndex);
             }
         }
         
@@ -577,7 +654,8 @@
             propertiesData.forEach((prop, index) => {
                 const option = document.createElement('option');
                 option.value = index; 
-                option.textContent = `${prop.locataire} - ${prop.adresse.substring(0, 30)}...`; 
+                const addressSnippet = prop.adresse ? prop.adresse.substring(0, 30) + (prop.adresse.length > 30 ? '...' : '') : 'Pas d\'adresse';
+                option.textContent = `${prop.locataire} - ${addressSnippet}`; 
                 inputs.propertySelector.appendChild(option);
             });
             
@@ -594,7 +672,6 @@
                 inputs.locAdresse.value = prop.adresse || '';
                 inputs.locEmail.value = prop.email || '';
                 inputs.locTel.value = prop.telephone || '';
-                // Utiliser prop.loyer_hc pour s'assurer que c'est le format stocké
                 inputs.loyer.value = prop.loyer_hc ? prop.loyer_hc.toFixed(2) : '0.00';
                 inputs.charges.value = prop.charges ? prop.charges.toFixed(2) : '0.00';
             }
@@ -701,13 +778,6 @@
             return result.charAt(0).toUpperCase() + result.slice(1).replace(/\s+/g, ' ');
         }
         
-        // NOUVEAU: Fonction d'affectation sécurisée
-        const safeSetContent = (element, value) => {
-            if (element) {
-                element.textContent = value;
-            }
-        };
-
         // Fonction principale de mise à jour de l'aperçu
         function updatePreview() {
             const loyer = parseFloat(inputs.loyer.value) || 0;
@@ -826,11 +896,11 @@
                 input.addEventListener('change', debouncedUpdatePreview);
             });
             
-            // Événements des boutons de gestion
+            // Événements des boutons de gestion (utilise la nouvelle fonction unifiée)
             inputs.propertySelector.addEventListener('change', (e) => loadPropertyData(e.target.value));
-            inputs.saveBtn.addEventListener('click', savePropertyData);
+            inputs.saveBtn.addEventListener('click', handleSaveProperty);
             inputs.addNewBtn.addEventListener('click', () => clearForm(false)); 
-            inputs.deleteBtn.addEventListener('click', deleteSelectedProperty); 
+            inputs.deleteBtn.addEventListener('click', handleDeleteProperty); 
             inputs.emailBtn.addEventListener('click', sendQuittanceEmail);
 
             // Bouton d'impression
