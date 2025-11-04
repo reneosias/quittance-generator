@@ -408,6 +408,14 @@
 
         async function initFirebaseAndAuth() {
             try {
+                // CORRECTION: Vérifier la configuration Firebase avant de l'initialiser
+                if (!firebaseConfig) {
+                    inputs.userInfo.innerHTML = `<span class="text-red-500 font-bold">Erreur : Configuration Cloud absente. (firebaseConfig est null)</span>`;
+                    inputs.loadingSpinner.classList.add('hidden');
+                    showToast("Erreur critique : La configuration Cloud est manquante.", 'error');
+                    return; // Arrêter l'initialisation si la configuration est absente
+                }
+
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -435,9 +443,9 @@
 
             } catch (error) {
                 console.error("Erreur d'initialisation de Firebase ou d'authentification:", error);
-                inputs.userInfo.innerHTML = `<span class="text-red-500">Erreur de connexion.</span>`;
+                inputs.userInfo.innerHTML = `<span class="text-red-500">Erreur de connexion au Cloud. (Détails en console)</span>`;
                 inputs.propertySelector.innerHTML = '<option value="-1">Erreur de chargement</option>';
-                showToast("Erreur lors de la connexion Cloud.", 'error');
+                showToast("Erreur lors de la connexion Cloud. Veuillez vérifier votre connexion.", 'error');
             }
         }
 
