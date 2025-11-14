@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Quittances de Loyer</title>
-    <!-- Chargement de Tailwind CSS pour le style --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- Police de caractères Inter --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>Gestionnaire de Quittances v2</title>
+    <!-- Chargement de Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Police Inter --><link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Icônes Heroicons pour une touche visuelle --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" xintegrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- Chart.js pour les graphiques --><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Icônes Font Awesome --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
-        /* Styles pour l'impression - NOUVELLE LOGIQUE ROBUSTE */
+        /* Styles pour l'impression (Logique robuste) */
         @media print {
              @page {
                 size: A4;
@@ -34,111 +33,51 @@
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
-                
                 width: 100% !important; /* S'adapte à la largeur de la page d'impression */
                 height: auto !important;
-                min-height: auto !important; /* Annule le style inline/tailwind */
-                
+                min-height: auto !important;
                 margin: 0 !important;
-                padding: 0 !important; /* Pas de padding pour le conteneur principal à l'impression */
-                
+                padding: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
             }
             
             /* 4. Cacher les éléments non imprimables */
-            .no-print, .receipt-logo {
+            .no-print {
                 display: none !important;
             }
 
-            /* 5. Retirer la bordure bleue de la preview à l'impression */
-            #receipt-preview {
-                 border-top: none !important;
-            }
-
-            /* 6. Réduire les marges verticales excessives UNIQUEMENT à l'impression */
-            #receipt-preview h1, #receipt-preview .my-12 {
-                margin-top: 1.5rem;
-                margin-bottom: 1.5rem;
-            }
-            #receipt-preview .mb-8, #receipt-preview .my-8 {
-                margin-top: 1rem;
-                margin-bottom: 1rem;
-            }
-            #receipt-preview .mt-16 {
-                margin-top: 2rem; /* Réduit de 4rem à 2rem */
-            }
-            #receipt-preview .mb-10 {
-                margin-bottom: 1.5rem;
-            }
+            /* 5. Réduire les marges pour l'impression */
+            #receipt-preview .my-8, #receipt-preview .mb-8 { margin-top: 1rem; margin-bottom: 1rem; }
+            #receipt-preview .my-12 { margin-top: 1.5rem; margin-bottom: 1.5rem; }
+            #receipt-preview .mt-16 { margin-top: 2rem; }
+            #receipt-preview .mb-10 { margin-bottom: 1.5rem; }
         }
         
         body {
             font-family: 'Inter', sans-serif;
-            @apply bg-gradient-to-br from-blue-50 to-indigo-100; /* Fond dégradé léger */
+            background-color: #f4f7f6; /* Fond plus doux */
         }
-
-        /* Styles pour les champs de formulaire */
-        .form-input {
-            @apply w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 ease-in-out; /* Bordure plus visible, transition plus douce */
+        .form-input, .form-select {
+            @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200;
         }
         .form-label {
             @apply block text-sm font-medium text-gray-700 mb-1;
         }
         .form-section {
-            @apply bg-white p-6 rounded-2xl shadow-xl mb-6 border border-gray-100; /* Bords plus arrondis, ombre plus marquée */
+            @apply bg-white p-6 rounded-xl shadow-lg border border-gray-100;
         }
         .form-title {
-            @apply text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200 flex items-center; /* Titre avec icône */
-        }
-        .form-title i {
-            @apply mr-2 text-blue-500; /* Style pour l'icône du titre */
+            @apply text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200 flex items-center;
         }
         .btn {
-            @apply px-5 py-2.5 rounded-lg font-medium text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl; /* Boutons plus stylés */
+            @apply px-4 py-2 rounded-md font-medium text-white shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 ease-in-out transform hover:scale-105;
         }
-        .btn-primary {
-            @apply bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:ring-blue-500; /* Ajout d'un dégradé */
-        }
-        .btn-secondary {
-            @apply bg-gray-500 hover:bg-gray-600 focus:ring-gray-400;
-        }
-        .btn-danger {
-             @apply bg-red-600 hover:bg-red-700 focus:ring-red-500;
-        }
-        .btn-success {
-            @apply bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:ring-green-500; /* Ajout d'un dégradé */
-        }
-        .icon-btn {
-            @apply bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg ml-2 transition duration-200 ease-in-out;
-        }
-        
-        /* Styles pour la prévisualisation de la quittance */
-        #receipt-preview {
-            /* border-top: 8px solid #3B82F6; */ /* Remplacé par une classe Tailwind */
-            position: relative; /* Pour positionner l'icône */
-            overflow: hidden; /* Pour que l'icône ne dépasse pas */
-        }
-        .receipt-logo {
-            position: absolute;
-            top: 40px; /* Ajuster la position */
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0.08; /* Très discret */
-            font-size: 8rem; /* Grande taille */
-            color: #a0aec0; /* Couleur grise douce */
-            z-index: 0; /* En arrière-plan */
-            pointer-events: none; /* Ne pas interférer avec le texte */
-        }
-
-        /* Animation d'entrée */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
+        .btn-primary { @apply bg-blue-600 hover:bg-blue-700 focus:ring-blue-500; }
+        .btn-secondary { @apply bg-gray-600 hover:bg-gray-700 focus:ring-gray-500; }
+        .btn-danger { @apply bg-red-600 hover:bg-red-700 focus:ring-red-500; }
+        .btn-success { @apply bg-green-600 hover:bg-green-700 focus:ring-green-500; }
+        .btn-sm { @apply px-3 py-1.5 text-sm; }
     </style>
 </head>
 
@@ -146,1040 +85,731 @@
 
     <div class="container mx-auto p-4 md:p-8">
         
-        <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-10 mt-4 fade-in" style="animation-delay: 0s;">Générateur de Quittance de Loyer <i class="fas fa-home text-blue-600 ml-2"></i></h1>
+        <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-8 mt-4">Gestionnaire de Quittances v2</h1>
+        <div id="auth-status" class="text-center mb-6 text-gray-600 font-medium p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Connexion à la base de données...
+        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in" style="animation-delay: 100ms;">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <!-- Colonne de gauche : Panneau de contrôle --><div class="lg:col-span-1 flex flex-col gap-6">
+            <!-- ====================================== -->
+            <!-- === COLONNE DE GAUCHE : CONTROLES === -->
+            <!-- ====================================== -->
+            <div class="lg:col-span-1 flex flex-col gap-6 sticky top-8 self-start no-print">
                 
-                <!-- Section Gestion (Propriétaires, Locataires, Biens) --><div class="form-section">
-                    <h2 class="form-title"><i class="fas fa-users"></i> Gestion des Entités</h2>
-                    
-                    <!-- Gérer les Propriétaires --><div>
-                        <label for="owner-select" class="form-label">Propriétaire Actuel</label>
-                        <div class="flex items-center gap-2">
-                            <select id="owner-select" class="form-input"></select>
-                            <button id="delete-owner-btn" class="icon-btn btn-danger no-print" title="Supprimer le propriétaire sélectionné"><i class="fas fa-trash"></i></button>
+                <!-- Section Bailleur (Vous) -->
+                <div class="form-section">
+                    <h2 class="form-title"><i class="fas fa-user-tie text-blue-500 mr-2"></i> Bailleur (Propriétaire)</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="landlord-name" class="form-label">Votre Nom Complet</label>
+                            <input type="text" id="landlord-name" class="form-input" placeholder="Ex: Jean Dupont">
                         </div>
+                        <div>
+                            <label for="landlord-address" class="form-label">Votre Adresse</label>
+                            <textarea id="landlord-address" class="form-input" rows="2" placeholder="Ex: 1 Rue de la Paix, 75000 Paris"></textarea>
+                        </div>
+                        <button id="save-landlord-btn" class="btn btn-primary w-full"><i class="fas fa-save mr-2"></i> Sauvegarder mes infos</button>
                     </div>
-                    <button id="new-owner-btn" class="btn btn-success w-full no-print mt-3 text-sm flex items-center justify-center"><i class="fas fa-plus mr-2"></i>Nouveau Propriétaire</button>
-                    
-                    <details class="mt-4 text-sm">
-                        <summary class="cursor-pointer font-medium text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out">Détails du Propriétaire (pour Ajout/Modification)</summary>
-                        <div class="mt-4 space-y-3">
-                            <div>
-                                <label for="owner-name" class="form-label">Nom du propriétaire</label>
-                                <input type="text" id="owner-name" class="form-input" value="René Osias ASSENDAHI">
-                            </div>
-                            <div>
-                                <label for="owner-phone" class="form-label">Téléphone</label>
-                                <input type="text" id="owner-phone" class="form-input" value="0668336085">
-                            </div>
-                            <div>
-                                <label for="owner-email" class="form-label">Email</label>
-                                <input type="email" id="owner-email" class="form-input" value="essonne1992@gmail.com">
-                            </div>
-                            <button id="save-owner-btn" class="btn btn-secondary w-full no-print"><i class="fas fa-save mr-2"></i>Sauvegarder Propriétaire</button>
-                        </div>
-                    </details>
-                    
-                    <hr class="my-6 border-gray-200">
+                </div>
 
-                    <!-- Gérer les Locataires --><div>
-                        <label for="tenant-select" class="form-label">Locataire Actuel</label>
-                         <div class="flex items-center gap-2">
-                            <select id="tenant-select" class="form-input"></select>
-                            <button id="delete-tenant-btn" class="icon-btn btn-danger no-print" title="Supprimer le locataire sélectionné"><i class="fas fa-trash"></i></button>
-                        </div>
+                <!-- Section Biens Immobiliers -->
+                <div class="form-section">
+                    <h2 class="form-title"><i class="fas fa-building text-green-500 mr-2"></i> Mes Biens Immobiliers</h2>
+                    <div class="flex gap-2 mb-4">
+                        <select id="property-select" class="form-select"></select>
+                        <button id="delete-property-btn" class="btn btn-danger btn-sm" title="Supprimer le bien sélectionné"><i class="fas fa-trash"></i></button>
                     </div>
-                    <button id="new-tenant-btn" class="btn btn-success w-full no-print mt-3 text-sm flex items-center justify-center"><i class="fas fa-plus mr-2"></i>Nouveau Locataire</button>
-                     <details class="mt-4 text-sm">
-                        <summary class="cursor-pointer font-medium text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out">Détails du Locataire (pour Ajout/Modification)</summary>
-                        <div class="mt-4 space-y-3">
-                            <div>
-                                <label for="tenant-name" class="form-label">Nom du locataire</label>
-                                <input type="text" id="tenant-name" class="form-input" value="SOLIHA SEINE ET MARNE">
-                            </div>
-                            <div>
-                                <label for="tenant-address" class="form-label">Adresse du locataire</label>
-                                <textarea id="tenant-address" class="form-input" rows="2">76 rue dian fossey 77000 melun</textarea>
-                            </div>
-                            <div>
-                                <label for="tenant-phone" class="form-label">Téléphone</label>
-                                <input type="text" id="tenant-phone" class="form-input">
-                            </div>
-                            <div>
-                                <label for="tenant-email" class="form-label">Email</label>
-                                <input type="email" id="tenant-email" class="form-input">
-                            </div>
-                            <button id="save-tenant-btn" class="btn btn-secondary w-full no-print"><i class="fas fa-save mr-2"></i>Sauvegarder Locataire</button>
+                    <button id="new-property-btn" class="btn btn-success w-full mb-4"><i class="fas fa-plus mr-2"></i> Nouveau Bien</button>
+                    <details id="property-details" class="mt-4 space-y-4" open>
+                        <summary class="font-medium text-gray-700 cursor-pointer">Détails du Bien (pour Ajout/Modif)</summary>
+                         <div>
+                            <label for="property-name" class="form-label">Nom du Bien (Interne)</label>
+                            <input type="text" id="property-name" class="form-input" placeholder="Ex: Appt 2, Rue de Melun">
                         </div>
-                    </details>
-
-                    <hr class="my-6 border-gray-200">
-
-                    <!-- Gérer les Biens --><div>
-                        <label for="property-select" class="form-label">Bien Immobilier Actuel</label>
-                         <div class="flex items-center gap-2">
-                            <select id="property-select" class="form-input"></select>
-                            <button id="delete-property-btn" class="icon-btn btn-danger no-print" title="Supprimer le bien sélectionné"><i class="fas fa-trash"></i></button>
+                        <div>
+                            <label for="property-address" class="form-label">Adresse Complète du Bien</label>
+                            <textarea id="property-address" class="form-input" rows="2" placeholder="Ex: 76 rue dian fossey, 77000 melun"></textarea>
                         </div>
-                    </div>
-                    <button id="new-property-btn" class="btn btn-success w-full no-print mt-3 text-sm flex items-center justify-center"><i class="fas fa-plus mr-2"></i>Nouveau Bien</button>
-                     <details class="mt-4 text-sm">
-                        <summary class="cursor-pointer font-medium text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out">Détails du Bien (pour Ajout/Modification)</summary>
-                        <div class="mt-4 space-y-3">
-                            <div>
-                                <label for="property-address" class="form-label">Adresse du bien</label>
-                                <textarea id="property-address" class="form-input" rows="2">76 rue dian fossey 77000 melun</textarea>
-                            </div>
-                            <button id="save-property-btn" class="btn btn-secondary w-full no-print"><i class="fas fa-save mr-2"></i>Sauvegarder Bien</button>
-                        </div>
+                        <button id="save-property-btn" class="btn btn-secondary w-full"><i class="fas fa-save mr-2"></i> Sauvegarder ce Bien</button>
                     </details>
                 </div>
-                
-                <!-- Section Détails de la Quittance --><div class="form-section">
-                    <h2 class="form-title"><i class="fas fa-file-invoice"></i> Détails de la Quittance</h2>
+
+                <!-- Section Locataires -->
+                <div class="form-section">
+                    <h2 class="form-title"><i class="fas fa-users text-purple-500 mr-2"></i> Mes Locataires</h2>
+                    <div class="flex gap-2 mb-4">
+                        <select id="tenant-select" class="form-select"></select>
+                        <button id="delete-tenant-btn" class="btn btn-danger btn-sm" title="Supprimer le locataire sélectionné"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <button id="new-tenant-btn" class="btn btn-success w-full mb-4"><i class="fas fa-plus mr-2"></i> Nouveau Locataire</button>
+                    <details id="tenant-details" class="mt-4 space-y-4" open>
+                        <summary class="font-medium text-gray-700 cursor-pointer">Détails du Locataire (pour Ajout/Modif)</summary>
+                         <div>
+                            <label for="tenant-name" class="form-label">Nom du Locataire</label>
+                            <input type="text" id="tenant-name" class="form-input" placeholder="Ex: SOLIHA SEINE ET MARNE">
+                        </div>
+                        <div>
+                            <label for="tenant-address" class="form-label">Adresse (si différente du bien)</label>
+                            <textarea id="tenant-address" class="form-input" rows="2" placeholder="Ex: 12 Rue du Siège Social..."></textarea>
+                        </div>
+                        <button id="save-tenant-btn" class="btn btn-secondary w-full"><i class="fas fa-save mr-2"></i> Sauvegarder ce Locataire</button>
+                    </details>
+                </div>
+
+                <!-- Section Génération Quittance -->
+                <div class="form-section bg-blue-50 border-blue-200">
+                    <h2 class="form-title"><i class="fas fa-file-invoice-dollar text-blue-600 mr-2"></i> Générer une Quittance</h2>
                     <div class="space-y-4">
+                        <div>
+                            <label for="gen-property" class="form-label">Choisir le Bien</label>
+                            <select id="gen-property" class="form-select"></select>
+                        </div>
+                        <div>
+                            <label for="gen-tenant" class="form-label">Choisir le Locataire</label>
+                            <select id="gen-tenant" class="form-select"></select>
+                        </div>
+                        
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="period-start" class="form-label">Début de période</label>
-                                <input type="date" id="period-start" class="form-input">
+                             <div>
+                                <label for="gen-month" class="form-label">Mois</label>
+                                <select id="gen-month" class="form-select"></select>
                             </div>
                             <div>
-                                <label for="period-end" class="form-label">Fin de période</label>
-                                <input type="date" id="period-end" class="form-input">
+                                <label for="gen-year" class="form-label">Année</label>
+                                <input type="number" id="gen-year" class="form-input" value="2024">
                             </div>
                         </div>
-                         <div>
-                            <label for="rent-amount" class="form-label">Montant du Loyer (€)</label>
-                            <input type="number" id="rent-amount" class="form-input" value="448.85" step="0.01">
+
+                         <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="gen-rent" class="form-label">Loyer (€)</label>
+                                <input type="number" id="gen-rent" class="form-input" step="0.01" placeholder="450.00">
+                            </div>
+                            <div>
+                                <label for="gen-charges" class="form-label">Charges (€)</label>
+                                <input type="number" id="gen-charges" class="form-input" step="0.01" placeholder="90.00">
+                            </div>
                         </div>
+
                         <div>
-                            <label for="charges-amount" class="form-label">Montant des Charges (€)</label>
-                            <input type="number" id="charges-amount" class="form-input" value="91.00" step="0.01">
+                            <label for="gen-date" class="form-label">Date du paiement</label>
+                            <input type="date" id="gen-date" class="form-input">
                         </div>
-                        <div>
-                            <label for="total-amount" class="form-label">Total (€)</label>
-                            <input type="text" id="total-amount" class="form-input bg-gray-100" readonly>
-                        </div>
-                         <div>
-                            <label for="date-issued" class="form-label">Fait le</label>
-                            <input type="date" id="date-issued" class="form-input">
-                        </div>
+                        
+                        <hr class="my-2"/>
+                        
+                        <button id="generate-btn" class="btn btn-primary w-full text-lg py-3"><i class="fas fa-magic mr-2"></i> Mettre à jour l'aperçu</button>
+                        <button id="print-btn" class="btn btn-secondary w-full"><i class="fas fa-print mr-2"></i> Imprimer la Quittance (PDF)</button>
                     </div>
                 </div>
 
-                <!-- NOUVELLE SECTION : Statistiques de Loyer --><div class="form-section">
-                    <h2 class="form-title"><i class="fas fa-chart-pie"></i> Statistiques du Loyer</h2>
-                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <canvas id="rentChart" class="w-full"></canvas>
-                    </div>
-                    <div class="mt-4 text-sm text-gray-600">
-                        <p class="mb-1"><span class="font-semibold text-blue-600">Loyer:</span> <span id="chart-rent-display"></span></p>
-                        <p><span class="font-semibold text-green-600">Charges:</span> <span id="chart-charges-display"></span></p>
-                    </div>
-                </div>
-
-                <!-- Section Assistant de Communication Gemini --><div class="form-section">
-                    <h2 class="form-title"><i class="fas fa-robot"></i> Assistant de Communication ✨</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="gemini-topic" class="form-label">Sujet de l'email</label>
-                            <select id="gemini-topic" class="form-input">
-                                <option value="envoi quittance" selected>Email d'envoi de quittance</option>
-                                <option value="rappel amical">Rappel de loyer (Amical)</option>
-                                <option value="relance retard">Relance de loyer (Retard)</option>
-                                <option value="réponse maintenance">Réponse (Demande de maintenance)</option>
-                                <option value="information générale">Information générale</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="gemini-notes" class="form-label">Points clés à inclure (optionnel)</label>
-                            <textarea id="gemini-notes" class="form-input" rows="3" placeholder="Ex: N'oubliez pas de sortir les poubelles..."></textarea>
-                        </div>
-                        <button id="generate-email-btn" class="btn btn-primary w-full no-print flex items-center justify-center">
-                            <i class="fas fa-magic mr-2"></i> Générer un brouillon d'email
-                        </button>
-                        <div>
-                            <label for="gemini-result" class="form-label">Brouillon généré</label>
-                            <textarea id="gemini-result" class="form-input bg-gray-50" rows="10" readonly></textarea>
-                        </div>
-                        <button id="copy-email-btn" class="btn btn-secondary w-full no-print text-sm flex items-center justify-center">
-                            <i class="fas fa-copy mr-2"></i> Copier le brouillon
-                        </button>
-                    </div>
-                </div>
-
-
-                <div class="flex flex-col gap-4 no-print mt-6">
-                    <button id="email-btn" class="btn btn-primary w-full text-lg py-3 flex items-center justify-center">
-                        <i class="fas fa-envelope mr-2"></i> Envoyer par Email (Prépare l'email)
-                    </button>
-                    <button id="print-btn" class="btn btn-secondary w-full text-md py-2 flex items-center justify-center">
-                        <i class="fas fa-print mr-2"></i> Imprimer la Quittance (PDF)
-                    </button>
-                </div>
             </div>
 
-            <!-- Colonne de droite : Prévisualisation -->
-            <!-- J'ai remplacé le 'style' par des classes Tailwind (w-[21cm] min-h-[29.7cm]) -->
-            <div class="lg:col-span-2 fade-in" style="animation-delay: 200ms;">
-                <div id="receipt-preview" class="bg-white p-8 md:p-12 shadow-2xl rounded-lg border border-gray-200 mx-auto relative w-[21cm] min-h-[29.7cm] max-w-full border-t-8 border-blue-600">
-                    <!-- Icône décorative pour la quittance --><div class="receipt-logo"><i class="fas fa-building"></i></div>
+            <!-- ======================================= -->
+            <!-- === COLONNE DE DROITE : APERÇU A4 === -->
+            <!-- ======================================= -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-8 md:p-12 shadow-2xl rounded-lg border border-gray-200 mx-auto" style="width: 21cm; min-height: 29.7cm;" id="receipt-preview-container">
                     
-                    <div class="grid grid-cols-2 gap-10 mb-8 relative z-10">
-                        <div>
-                            <h3 class="text-sm font-semibold uppercase text-indigo-800 mb-2 tracking-wider p-2 bg-indigo-50 rounded">PROPRIÉTAIRE</h3>
-                            <div class="font-medium text-gray-800">
-                                <span id="preview-owner-name">René Osias ASSENDAHI</span>
+                    <div id="receipt-preview">
+                        <!-- En-tête -->
+                        <div class="grid grid-cols-2 gap-10 mb-8">
+                            <div>
+                                <h3 class="text-sm font-semibold uppercase text-indigo-800 mb-2 tracking-wider p-2 bg-indigo-50 rounded">BAILLEUR</h3>
+                                <div class="font-medium text-gray-800" id="preview-landlord-name">[Votre Nom]</div>
+                                <div class="text-gray-600 whitespace-pre-line" id="preview-landlord-address">[Votre Adresse]</div>
                             </div>
-                            <div class="text-gray-600">
-                                <span id="preview-owner-phone">0668336085</span><br>
-                                <span id="preview-owner-email">essonne1992@gmail.com</span>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold uppercase text-indigo-800 mb-2 tracking-wider p-2 bg-indigo-50 rounded">LOCATAIRE</h3>
-                            <div class="font-medium text-gray-800">
-                                <span id="preview-tenant-name">SOLIHA SEINE ET MARNE</span>
-                            </div>
-                            <div class="text-gray-600 whitespace-pre-line">
-                                <span id="preview-tenant-address">76 rue dian fossey 77000 melun</span>
-                            </div>
-                            <div class="text-gray-600">
-                                <span id="preview-tenant-phone"></span><br>
-                                <span id="preview-tenant-email"></span>
+                            <div>
+                                <h3 class="text-sm font-semibold uppercase text-indigo-800 mb-2 tracking-wider p-2 bg-indigo-50 rounded">LOCATAIRE</h3>
+                                <div class="font-medium text-gray-800" id="preview-tenant-name">[Nom Locataire]</div>
+                                <div class="text-gray-600 whitespace-pre-line" id="preview-tenant-address">[Adresse Locataire]</div>
                             </div>
                         </div>
-                    </div>
 
-                    <h1 class="text-3xl font-bold text-center my-12 text-white bg-gradient-to-r from-blue-600 to-indigo-700 p-4 rounded-lg shadow-md relative z-10 tracking-wide">QUITTANCE DE LOYER</h1>
+                        <!-- Titre -->
+                        <h1 class="text-3xl font-bold text-center my-12 text-white bg-gradient-to-r from-blue-600 to-indigo-700 p-4 rounded-lg shadow-md tracking-wide">QUITTANCE DE LOYER</h1>
 
-                    <div class="text-right mb-8 relative z-10">
-                        Période du <span id="preview-period-start" class="font-medium">01-04-2025</span> au <span id="preview-period-end" class="font-medium">30-04-2025</span>
-                    </div>
-
-                    <p class="text-gray-700 leading-relaxed mb-6 relative z-10">
-                        Je soussigné, <span id="preview-owner-name-2" class="font-bold">René Osias ASSENDAHI</span>, propriétaire du logement situé au <span id="preview-property-address" class="font-bold whitespace-pre-line">76 rue dian fossey 77000 melun</span>, atteste avoir reçu, de la part de <span id="preview-tenant-name-2" class="font-bold">SOLIHA SEINE ET MARNE</span>, la somme de <span id="preview-total-words" class="font-bold">cinq cent trente-neuf Euros quatre-vingt-cinq centimes</span> se décomposant comme suit:
-                    </p>
-
-                    <table class="w-full my-8 border-collapse relative z-10">
-                        <thead>
-                            <tr>
-                                <th class="border p-3 text-left bg-blue-100 font-semibold text-blue-800">Description</th>
-                                <th class="border p-3 text-right bg-blue-100 font-semibold text-blue-800">Montant</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="border p-3 text-gray-700">Montant du loyer</td>
-                                <td class="border p-3 text-right text-gray-800" id="preview-rent-amount">448,85 €</td>
-                            </tr>
-                            <tr>
-                                <td class="border p-3 text-gray-700">Charges</td>
-                                <td class="border p-3 text-right text-gray-800" id="preview-charges-amount">91,00 €</td>
-                            </tr>
-                            <tr>
-                                <td class="border p-3 text-left bg-blue-600 font-bold text-white">TOTAL</td>
-                                <td class="border p-3 text-right bg-blue-600 font-bold text-white" id="preview-total-amount">539,85 €</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <p class="text-gray-700 leading-relaxed mb-10 relative z-10">
-                        Cette somme de <span id="preview-total-words-2" class="font-bold">cinq cent trente-neuf Euros quatre-vingt-cinq centimes</span>, correspond au règlement du loyer et des charges pour la période du <span id="preview-period-start-2" class="font-medium">01-04-2025</span> au <span id="preview-period-end-2" class="font-medium">30-04-2025</span>.
-                    </p>
-                    
-                    <table class="w-full my-8 text-center text-sm relative z-10">
-                        <thead>
-                            <tr>
-                                <th class="border p-2 bg-blue-100 font-semibold text-blue-800">Montant à verser</th>
-                                <th class="border p-2 bg-blue-100 font-semibold text-blue-800">Montant versé</th>
-                                <th class="border p-2 bg-blue-100 font-semibold text-blue-800">Reste à percevoir</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="border p-2 text-gray-800" id="preview-total-due">539,85 €</td>
-                                <td class="border p-2 text-gray-800" id="preview-total-paid">539,85 €</td>
-                                <td class="border p-2 text-gray-800" id="preview-total-remaining">0,00 €</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="flex justify-between items-start mt-16 relative z-10">
-                         <div>
-                            Fait le <span id="preview-date-issued" class="font-medium">09-04-2025</span>
+                        <!-- Infos Période -->
+                        <div class="flex justify-between items-center mb-8">
+                            <div>
+                                <strong>Bien concerné :</strong>
+                                <span class="font-medium whitespace-pre-line" id="preview-property-address">[Adresse du Bien]</span>
+                            </div>
+                            <div class="text-right">
+                                <strong>Période :</strong>
+                                <span class="font-medium" id="preview-period">[Mois Année]</span>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <span id="preview-owner-name-3" class="font-bold">René Osias ASSENDAHI</span>
-                        </div>
-                    </div>
 
-                    <div class="border-t mt-16 pt-4 text-xs text-gray-500 text-justify relative z-10">
-                        Le paiement de la présente n'emporte pas présomption de paiement des termes antérieurs. Cette quittance ou ce reçu annule tous les reçus qui auraient pu être donnés pour acompte versé sur le présent terme. En cas de congé précédemment donné, cette quittance ou ce reçu représenterait l'indemnité d'occupation et ne saurait être considéré comme un titre d'occupation. Sous réserve d'encaissement.
-                    </div>
-                </div>
+                        <!-- Corps du texte -->
+                        <p class="text-gray-700 leading-relaxed mb-6">
+                            Je soussigné, <span id="preview-landlord-name-2" class="font-bold">[Votre Nom]</span>, propriétaire (bailleur) du logement désigné ci-dessus, atteste avoir reçu de la part de <span id="preview-tenant-name-2" class="font-bold">[Nom Locataire]</span>, la somme de <span id="preview-total-words" class="font-bold">[Total en Lettres]</span>, se décomposant comme suit :
+                        </p>
+
+                        <!-- Table des montants -->
+                        <table class="w-full my-8 border-collapse">
+                            <thead>
+                                <tr>
+                                    <th class="border p-3 text-left bg-blue-100 font-semibold text-blue-800">Description</th>
+                                    <th class="border p-3 text-right bg-blue-100 font-semibold text-blue-800">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border p-3 text-gray-700">Montant du loyer</td>
+                                    <td class="border p-3 text-right text-gray-800" id="preview-rent-amount">[Loyer] €</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-3 text-gray-700">Provision sur charges</td>
+                                    <td class="border p-3 text-right text-gray-800" id="preview-charges-amount">[Charges] €</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-3 text-left bg-blue-600 font-bold text-white">TOTAL</td>
+                                    <td class="border p-3 text-right bg-blue-600 font-bold text-white" id="preview-total-amount">[Total] €</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p class="text-gray-700 leading-relaxed mb-10">
+                            Cette somme correspond au règlement du loyer et des charges pour la période du <span id="preview-period-full" class="font-medium">[Période complète]</span>.
+                        </p>
+                        
+                        <!-- Footer -->
+                        <div class="flex justify-between items-start mt-16">
+                            <div>
+                                Fait à <input type="text" placeholder="[Votre Ville]" class="border-b-2 border-gray-300 focus:border-blue-500 outline-none w-40">, le <span id="preview-date-issued" class="font-medium">[Date]</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="preview-landlord-name-3" class="font-bold">[Votre Nom]</span>
+                                <br/>(Signature du bailleur)
+                                <div class="w-48 h-16 border border-gray-200 mt-2 bg-gray-50 rounded"></div>
+                            </div>
+                        </div>
+
+                        <div class="border-t mt-16 pt-4 text-xs text-gray-500 text-justify">
+                            Le paiement de la présente n'emporte pas présomption de paiement des termes antérieurs. Cette quittance ou ce reçu annule tous les reçus qui auraient pu être donnés pour acompte versé sur le présent terme. Sous réserve d'encaissement. (Loi n° 89-462 du 6 juillet 1989 - Article 21).
+                        </div>
+                    </div> <!-- fin #receipt-preview -->
+
+                </div> <!-- fin #receipt-preview-container -->
             </div>
-
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- ÉLÉMENTS DU DOM ---
-            // Sélecteurs
-            const ownerSelect = document.getElementById('owner-select');
-            const tenantSelect = document.getElementById('tenant-select');
-            const propertySelect = document.getElementById('property-select');
+    <!-- ======================================= -->
+    <!-- === SCRIPT DE LOGIQUE (FIREBASE) === -->
+    <!-- ======================================= -->
+    <script type="module">
+        // Importations Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, 
+            onSnapshot, collection, query, setLogLevel 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            // Formulaires de gestion
-            const ownerNameInput = document.getElementById('owner-name');
-            const ownerPhoneInput = document.getElementById('owner-phone');
-            const ownerEmailInput = document.getElementById('owner-email');
-            const tenantNameInput = document.getElementById('tenant-name');
-            const tenantAddressInput = document.getElementById('tenant-address');
-            const tenantPhoneInput = document.getElementById('tenant-phone'); // Ajouté
-            const tenantEmailInput = document.getElementById('tenant-email'); // Ajouté
-            const propertyAddressInput = document.getElementById('property-address');
+        // --- Configuration Firebase ---
+        // Ces variables (__app_id, __firebase_config, __initial_auth_token) sont fournies par l'environnement.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-            // Formulaire de quittance
-            const periodStartInput = document.getElementById('period-start');
-            const periodEndInput = document.getElementById('period-end');
-            const rentAmountInput = document.getElementById('rent-amount');
-            const chargesAmountInput = document.getElementById('charges-amount');
-            const totalAmountInput = document.getElementById('total-amount');
-            const dateIssuedInput = document.getElementById('date-issued');
+        // --- Initialisation Firebase ---
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            setLogLevel('debug'); // Active les logs pour le débogage
+        } catch (e) {
+            console.error("Erreur d'initialisation de Firebase:", e);
+            document.getElementById('auth-status').innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i> Erreur de configuration Firebase.';
+        }
 
-            // Boutons
-            const saveOwnerBtn = document.getElementById('save-owner-btn');
-            const deleteOwnerBtn = document.getElementById('delete-owner-btn');
-            const newOwnerBtn = document.getElementById('new-owner-btn'); // Nouveau
-            const saveTenantBtn = document.getElementById('save-tenant-btn');
-            const deleteTenantBtn = document.getElementById('delete-tenant-btn');
-            const newTenantBtn = document.getElementById('new-tenant-btn'); // Nouveau
-            const savePropertyBtn = document.getElementById('save-property-btn');
-            const deletePropertyBtn = document.getElementById('delete-property-btn');
-            const newPropertyBtn = document.getElementById('new-property-btn'); // Nouveau
-            const printBtn = document.getElementById('print-btn');
-            const emailBtn = document.getElementById('email-btn'); // Ajouté
+        // --- État global de l'application ---
+        const appState = {
+            userId: null,
+            currentLandlord: {},
+            properties: [],
+            tenants: [],
+            selectedPropertyId: null, // Pour le formulaire de gestion
+            selectedTenantId: null   // Pour le formulaire de gestion
+        };
 
-            // Nouveaux éléments Gemini
-            const geminiTopic = document.getElementById('gemini-topic');
-            const geminiNotes = document.getElementById('gemini-notes');
-            const generateEmailBtn = document.getElementById('generate-email-btn');
-            const geminiResult = document.getElementById('gemini-result');
-            const copyEmailBtn = document.getElementById('copy-email-btn');
+        // --- Éléments du DOM (Contrôles) ---
+        const authStatusEl = document.getElementById('auth-status');
+        
+        // Bailleur
+        const landlordNameInput = document.getElementById('landlord-name');
+        const landlordAddressInput = document.getElementById('landlord-address');
+        const saveLandlordBtn = document.getElementById('save-landlord-btn');
 
-            // Éléments du graphique
-            const rentChartCanvas = document.getElementById('rentChart');
-            let rentChartInstance = null; // Pour stocker l'instance du graphique Chart.js
-            const chartRentDisplay = document.getElementById('chart-rent-display');
-            const chartChargesDisplay = document.getElementById('chart-charges-display');
+        // Biens
+        const propertySelect = document.getElementById('property-select');
+        const newPropertyBtn = document.getElementById('new-property-btn');
+        const deletePropertyBtn = document.getElementById('delete-property-btn');
+        const propertyDetails = document.getElementById('property-details');
+        const propertyNameInput = document.getElementById('property-name');
+        const propertyAddressInput = document.getElementById('property-address');
+        const savePropertyBtn = document.getElementById('save-property-btn');
 
+        // Locataires
+        const tenantSelect = document.getElementById('tenant-select');
+        const newTenantBtn = document.getElementById('new-tenant-btn');
+        const deleteTenantBtn = document.getElementById('delete-tenant-btn');
+        const tenantDetails = document.getElementById('tenant-details');
+        const tenantNameInput = document.getElementById('tenant-name');
+        const tenantAddressInput = document.getElementById('tenant-address');
+        const saveTenantBtn = document.getElementById('save-tenant-btn');
 
-            // Champs de la prévisualisation
-            const preview = {
-                ownerName: document.getElementById('preview-owner-name'),
-                ownerPhone: document.getElementById('preview-owner-phone'),
-                ownerEmail: document.getElementById('preview-owner-email'),
-                tenantName: document.getElementById('preview-tenant-name'),
-                tenantAddress: document.getElementById('preview-tenant-address'),
-                tenantPhone: document.getElementById('preview-tenant-phone'), // Ajouté
-                tenantEmail: document.getElementById('preview-tenant-email'), // Ajouté
-                periodStart: document.getElementById('preview-period-start'),
-                periodEnd: document.getElementById('preview-period-end'),
-                ownerName2: document.getElementById('preview-owner-name-2'),
-                propertyAddress: document.getElementById('preview-property-address'),
-                tenantName2: document.getElementById('preview-tenant-name-2'),
-                totalWords: document.getElementById('preview-total-words'),
-                rentAmount: document.getElementById('preview-rent-amount'),
-                chargesAmount: document.getElementById('preview-charges-amount'),
-                totalAmount: document.getElementById('preview-total-amount'),
-                totalWords2: document.getElementById('preview-total-words-2'),
-                periodStart2: document.getElementById('preview-period-start-2'),
-                periodEnd2: document.getElementById('preview-period-end-2'),
-                totalDue: document.getElementById('preview-total-due'),
-                totalPaid: document.getElementById('preview-total-paid'),
-                totalRemaining: document.getElementById('preview-total-remaining'),
-                dateIssued: document.getElementById('preview-date-issued'),
-                ownerName3: document.getElementById('preview-owner-name-3'),
-            };
+        // Générateur
+        const genPropertySelect = document.getElementById('gen-property');
+        const genTenantSelect = document.getElementById('gen-tenant');
+        const genMonthSelect = document.getElementById('gen-month');
+        const genYearInput = document.getElementById('gen-year');
+        const genRentInput = document.getElementById('gen-rent');
+        const genChargesInput = document.getElementById('gen-charges');
+        const genDateInput = document.getElementById('gen-date');
+        const generateBtn = document.getElementById('generate-btn');
+        const printBtn = document.getElementById('print-btn');
 
-            // --- GESTION DU STOCKAGE LOCAL ---
-            
-            /**
-             * Charge les données depuis localStorage
-             * @param {string} key - Clé de stockage (e.g., 'owners')
-             * @returns {Array} - Tableau de données
-             */
-            const loadFromStorage = (key) => {
-                return JSON.parse(localStorage.getItem(key)) || [];
-            };
+        // --- Éléments du DOM (Aperçu) ---
+        const preview = {
+            landlordName: document.getElementById('preview-landlord-name'),
+            landlordAddress: document.getElementById('preview-landlord-address'),
+            tenantName: document.getElementById('preview-tenant-name'),
+            tenantAddress: document.getElementById('preview-tenant-address'),
+            propertyAddress: document.getElementById('preview-property-address'),
+            period: document.getElementById('preview-period'),
+            landlordName2: document.getElementById('preview-landlord-name-2'),
+            tenantName2: document.getElementById('preview-tenant-name-2'),
+            totalWords: document.getElementById('preview-total-words'),
+            rentAmount: document.getElementById('preview-rent-amount'),
+            chargesAmount: document.getElementById('preview-charges-amount'),
+            totalAmount: document.getElementById('preview-total-amount'),
+            periodFull: document.getElementById('preview-period-full'),
+            dateIssued: document.getElementById('preview-date-issued'),
+            landlordName3: document.getElementById('preview-landlord-name-3'),
+        };
 
-            /**
-             * Sauvegarde les données dans localStorage
-             * @param {string} key - Clé de stockage
-             * @param {Array} data - Tableau de données
-             */
-            const saveToStorage = (key, data) => {
-                localStorage.setItem(key, JSON.stringify(data));
-            };
-
-            /**
-             * Remplit un <select> avec les données
-             * @param {HTMLSelectElement} selectEl - L'élément <select>
-             * @param {Array} data - Tableau d'objets
-             * @param {string} nameField - Clé à utiliser pour l'affichage (e.g., 'name' ou 'address')
-             */
-            const populateSelect = (selectEl, data, nameField) => {
-                const currentVal = selectEl.value; // Sauvegarde la valeur actuelle
-                selectEl.innerHTML = '';
-                if (data.length === 0) {
-                    selectEl.innerHTML = '<option value="">-- Ajoutez un élément --</option>';
-                    return;
+        // --- Logique d'Authentification ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                console.log("Utilisateur connecté:", user.uid);
+                appState.userId = user.uid;
+                authStatusEl.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i> Connecté (ID: ${user.uid.substring(0, 8)}...)`;
+                // Démarrer l'application principale
+                await initializeAppLogic();
+            } else {
+                console.log("Utilisateur non connecté, tentative de connexion...");
+                appState.userId = null;
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (e) {
+                    console.error("Échec de la connexion:", e);
+                    authStatusEl.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i> Échec de la connexion. Vos données ne seront pas sauvegardées.';
                 }
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = item[nameField];
-                    selectEl.appendChild(option);
-                });
-                selectEl.value = currentVal; // Ré-applique la valeur si possible
-            };
+            }
+        });
 
-            // --- FONCTIONS DE GESTION (CRUD) ---
+        // --- Initialisation de l'application (après connexion) ---
+        async function initializeAppLogic() {
+            if (!appState.userId) return;
 
-            // Nouveaux boutons
-            newOwnerBtn.addEventListener('click', () => {
-                ownerSelect.value = ''; // Très important: désélectionne
-                ownerNameInput.value = '';
-                ownerPhoneInput.value = '';
-                ownerEmailInput.value = '';
-                ownerNameInput.focus(); // Met le focus sur le premier champ
+            // Initialiser les formulaires
+            initDateFields();
+            initMonthSelector();
+
+            // Configurer les écouteurs de snapshot (temps réel)
+            setupSnapshots();
+
+            // Configurer les écouteurs de clics
+            setupClickListeners();
+        }
+
+        // --- Fonctions de Configuration ---
+
+        function initDateFields() {
+            const today = new Date().toISOString().split('T')[0];
+            genDateInput.value = today;
+            genYearInput.value = new Date().getFullYear();
+        }
+
+        function initMonthSelector() {
+            const mois = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+            const currentMonth = new Date().getMonth(); // 0-11
+            genMonthSelect.innerHTML = '';
+            mois.forEach((nom, index) => {
+                const option = new Option(nom, index);
+                genMonthSelect.add(option);
             });
+            genMonthSelect.value = currentMonth;
+        }
 
-            newTenantBtn.addEventListener('click', () => {
+        function setupClickListeners() {
+            // Bailleur
+            saveLandlordBtn.onclick = saveLandlord;
+
+            // Gestion Biens
+            newPropertyBtn.onclick = () => {
+                appState.selectedPropertyId = null;
+                propertySelect.value = '';
+                propertyNameInput.value = '';
+                propertyAddressInput.value = '';
+                propertyDetails.open = true;
+                propertyNameInput.focus();
+            };
+            savePropertyBtn.onclick = saveProperty;
+            deletePropertyBtn.onclick = deleteProperty;
+            propertySelect.onchange = (e) => loadPropertyToForm(e.target.value);
+
+            // Gestion Locataires
+            newTenantBtn.onclick = () => {
+                appState.selectedTenantId = null;
                 tenantSelect.value = '';
                 tenantNameInput.value = '';
                 tenantAddressInput.value = '';
-                tenantPhoneInput.value = ''; // Ajouté
-                tenantEmailInput.value = ''; // Ajouté
+                tenantDetails.open = true;
                 tenantNameInput.focus();
+            };
+            saveTenantBtn.onclick = saveTenant;
+            deleteTenantBtn.onclick = deleteTenant;
+            tenantSelect.onchange = (e) => loadTenantToForm(e.target.value);
+
+            // Génération
+            generateBtn.onclick = updatePreview;
+            printBtn.onclick = () => window.print();
+        }
+
+        // --- Fonctions de Données (Firestore) ---
+
+        function getCollectionPath(collectionName) {
+            return `/artifacts/${appId}/users/${appState.userId}/${collectionName}`;
+        }
+        function getDocPath(collectionName, docId) {
+            return `/artifacts/${appId}/users/${appState.userId}/${collectionName}/${docId}`;
+        }
+
+        function setupSnapshots() {
+            // Écouteur pour le Bailleur
+            const landlordRef = doc(db, getDocPath('landlord', 'details'));
+            onSnapshot(landlordRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    appState.currentLandlord = data;
+                    landlordNameInput.value = data.name || '';
+                    landlordAddressInput.value = data.address || '';
+                } else {
+                    console.log("Aucune info de bailleur trouvée.");
+                }
             });
 
-            newPropertyBtn.addEventListener('click', () => {
-                propertySelect.value = '';
+            // Écouteur pour les Biens
+            const propertiesQuery = query(collection(db, getCollectionPath('properties')));
+            onSnapshot(propertiesQuery, (snapshot) => {
+                appState.properties = [];
+                snapshot.forEach(doc => appState.properties.push({ id: doc.id, ...doc.data() }));
+                console.log("Biens chargés:", appState.properties);
+                populateSelect(propertySelect, appState.properties, 'name', 'Sélectionner un bien');
+                populateSelect(genPropertySelect, appState.properties, 'name');
+            });
+
+            // Écouteur pour les Locataires
+            const tenantsQuery = query(collection(db, getCollectionPath('tenants')));
+            onSnapshot(tenantsQuery, (snapshot) => {
+                appState.tenants = [];
+                snapshot.forEach(doc => appState.tenants.push({ id: doc.id, ...doc.data() }));
+                console.log("Locataires chargés:", appState.tenants);
+                populateSelect(tenantSelect, appState.tenants, 'name', 'Sélectionner un locataire');
+                populateSelect(genTenantSelect, appState.tenants, 'name');
+            });
+        }
+
+        // --- Fonctions CRUD (Bailleur) ---
+        async function saveLandlord() {
+            const data = {
+                name: landlordNameInput.value,
+                address: landlordAddressInput.value
+            };
+            const landlordRef = doc(db, getDocPath('landlord', 'details'));
+            try {
+                await setDoc(landlordRef, data); // setDoc écrase le document
+                alert("Informations du bailleur sauvegardées !");
+            } catch (e) {
+                console.error("Erreur sauvegarde bailleur:", e);
+                alert("Erreur: " + e.message);
+            }
+        }
+
+        // --- Fonctions CRUD (Biens) ---
+        function loadPropertyToForm(id) {
+            const prop = appState.properties.find(p => p.id === id);
+            if (prop) {
+                appState.selectedPropertyId = id;
+                propertyNameInput.value = prop.name;
+                propertyAddressInput.value = prop.address;
+                propertyDetails.open = true;
+            }
+        }
+        
+        async function saveProperty() {
+            const data = {
+                name: propertyNameInput.value,
+                address: propertyAddressInput.value
+            };
+            if (!data.name || !data.address) {
+                alert("Veuillez remplir le nom et l'adresse du bien.");
+                return;
+            }
+
+            try {
+                if (appState.selectedPropertyId) {
+                    // Mettre à jour (Update)
+                    const docRef = doc(db, getDocPath('properties', appState.selectedPropertyId));
+                    await updateDoc(docRef, data);
+                    alert("Bien mis à jour !");
+                } else {
+                    // Créer (Create)
+                    const collectionRef = collection(db, getCollectionPath('properties'));
+                    await addDoc(collectionRef, data);
+                    alert("Nouveau bien ajouté !");
+                }
+                // Réinitialiser le formulaire
+                appState.selectedPropertyId = null;
+                propertyNameInput.value = '';
                 propertyAddressInput.value = '';
-                propertyAddressInput.focus();
-            });
+                propertyDetails.open = false;
 
+            } catch (e) {
+                console.error("Erreur sauvegarde bien:", e);
+                alert("Erreur: " + e.message);
+            }
+        }
 
-            // Propriétaires
-            const refreshOwners = () => {
-                const owners = loadFromStorage('owners');
-                populateSelect(ownerSelect, owners, 'name');
-                if (ownerSelect.value) { // Charge si une valeur est sélectionnée
-                    loadOwnerData(ownerSelect.value);
-                } else if (owners.length > 0) { // Sinon charge le premier
-                    ownerSelect.value = owners[0].id;
-                    loadOwnerData(owners[0].id);
-                } else {
-                    loadOwnerData(''); // Vide les champs
-                }
-                updatePreview();
+        async function deleteProperty() {
+            const idToDelete = propertySelect.value;
+            if (!idToDelete) {
+                alert("Veuillez sélectionner un bien à supprimer.");
+                return;
+            }
+            // Pas de confirm() car interdit, on supprime directement
+            try {
+                const docRef = doc(db, getDocPath('properties', idToDelete));
+                await deleteDoc(docRef);
+                alert("Bien supprimé !");
+            } catch (e) {
+                console.error("Erreur suppression bien:", e);
+                alert("Erreur: " + e.message);
+            }
+        }
+
+        // --- Fonctions CRUD (Locataires) ---
+        function loadTenantToForm(id) {
+            const tenant = appState.tenants.find(t => t.id === id);
+            if (tenant) {
+                appState.selectedTenantId = id;
+                tenantNameInput.value = tenant.name;
+                tenantAddressInput.value = tenant.address;
+                tenantDetails.open = true;
+            }
+        }
+        
+        async function saveTenant() {
+            const data = {
+                name: tenantNameInput.value,
+                address: tenantAddressInput.value
             };
+             if (!data.name) {
+                alert("Veuillez remplir le nom du locataire.");
+                return;
+            }
 
-            const loadOwnerData = (id) => {
-                const owners = loadFromStorage('owners');
-                const owner = owners.find(o => o.id === id);
-                if (owner) {
-                    ownerNameInput.value = owner.name;
-                    ownerPhoneInput.value = owner.phone;
-                    ownerEmailInput.value = owner.email;
+            try {
+                if (appState.selectedTenantId) {
+                    // Mettre à jour (Update)
+                    const docRef = doc(db, getDocPath('tenants', appState.selectedTenantId));
+                    await updateDoc(docRef, data);
+                    alert("Locataire mis à jour !");
                 } else {
-                    // Si aucun ID (ex: clic sur "Nouveau"), on vide les champs
-                    ownerNameInput.value = '';
-                    ownerPhoneInput.value = '';
-                    ownerEmailInput.value = '';
+                    // Créer (Create)
+                    const collectionRef = collection(db, getCollectionPath('tenants'));
+                    await addDoc(collectionRef, data);
+                    alert("Nouveau locataire ajouté !");
                 }
-            };
+                // Réinitialiser le formulaire
+                appState.selectedTenantId = null;
+                tenantNameInput.value = '';
+                tenantAddressInput.value = '';
+                tenantDetails.open = false;
 
-            saveOwnerBtn.addEventListener('click', () => {
-                let owners = loadFromStorage('owners');
-                const selectedId = ownerSelect.value;
-                let existingOwner = null;
-                if (selectedId) {
-                    existingOwner = owners.find(o => o.id === selectedId);
-                }
+            } catch (e) {
+                console.error("Erreur sauvegarde locataire:", e);
+                alert("Erreur: " + e.message);
+            }
+        }
 
-                const ownerData = {
-                    id: existingOwner ? selectedId : crypto.randomUUID(),
-                    name: ownerNameInput.value,
-                    phone: ownerPhoneInput.value,
-                    email: ownerEmailInput.value,
-                };
+        async function deleteTenant() {
+            const idToDelete = tenantSelect.value;
+            if (!idToDelete) {
+                alert("Veuillez sélectionner un locataire à supprimer.");
+                return;
+            }
+            try {
+                const docRef = doc(db, getDocPath('tenants', idToDelete));
+                await deleteDoc(docRef);
+                alert("Locataire supprimé !");
+            } catch (e) {
+                console.error("Erreur suppression locataire:", e);
+                alert("Erreur: " + e.message);
+            }
+        }
 
-                if (existingOwner) {
-                    // Mise à jour
-                    owners = owners.map(o => o.id === selectedId ? ownerData : o);
-                } else {
-                    // Ajout
-                    owners.push(ownerData);
-                }
-                
-                saveToStorage('owners', owners);
-                refreshOwners(); // Refresh la liste
-                ownerSelect.value = ownerData.id; // Sélectionne l'élément sauvegardé
+        // --- Fonctions Utilitaires ---
+        function populateSelect(selectEl, data, nameField, placeholder) {
+            const currentVal = selectEl.value;
+            selectEl.innerHTML = ''; // Vider
+            if (placeholder) {
+                selectEl.add(new Option(placeholder, ''));
+            }
+            if (data.length === 0) {
+                 selectEl.add(new Option('-- Veuillez en ajouter --', ''));
+            }
+            data.forEach(item => {
+                selectEl.add(new Option(item[nameField], item.id));
             });
+            selectEl.value = currentVal;
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return 'jj/mm/aaaa';
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+        }
+        
+        function formatCurrency(num) {
+            return isNaN(num) ? '0,00' : num.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
-            deleteOwnerBtn.addEventListener('click', () => {
-                let owners = loadFromStorage('owners');
-                const selectedId = ownerSelect.value;
-                // J'ai retiré !confirm(...) pour respecter les instructions (pas de popups)
-                if (!selectedId) return; 
-                
-                owners = owners.filter(o => o.id !== selectedId);
-                saveToStorage('owners', owners);
-                
-                refreshOwners(); // Refresh pour mettre à jour la liste
-            });
 
-            ownerSelect.addEventListener('change', () => {
-                loadOwnerData(ownerSelect.value);
-                updatePreview();
-            });
-
-            // Locataires
-            const refreshTenants = () => {
-                const tenants = loadFromStorage('tenants');
-                populateSelect(tenantSelect, tenants, 'name');
-                 if (tenantSelect.value) {
-                    loadTenantData(tenantSelect.value);
-                 } else if (tenants.length > 0) {
-                    tenantSelect.value = tenants[0].id;
-                    loadTenantData(tenants[0].id);
-                } else {
-                    loadTenantData('');
-                }
-                updatePreview();
-            };
-
-            const loadTenantData = (id) => {
-                const tenants = loadFromStorage('tenants');
-                const tenant = tenants.find(t => t.id === id);
-                if (tenant) {
-                    tenantNameInput.value = tenant.name;
-                    tenantAddressInput.value = tenant.address;
-                    tenantPhoneInput.value = tenant.phone || ''; // Ajouté
-                    tenantEmailInput.value = tenant.email || ''; // Ajouté
-                } else {
-                    tenantNameInput.value = '';
-                    tenantAddressInput.value = '';
-                    tenantPhoneInput.value = ''; // Ajouté
-                    tenantEmailInput.value = ''; // Ajouté
-                }
-            };
-
-            saveTenantBtn.addEventListener('click', () => {
-                let tenants = loadFromStorage('tenants');
-                const selectedId = tenantSelect.value;
-                let existingTenant = null;
-                if (selectedId) {
-                    existingTenant = tenants.find(t => t.id === selectedId);
-                }
-
-                const tenantData = {
-                    id: existingTenant ? selectedId : crypto.randomUUID(),
-                    name: tenantNameInput.value,
-                    address: tenantAddressInput.value,
-                    phone: tenantPhoneInput.value, // Ajouté
-                    email: tenantEmailInput.value, // Ajouté
-                };
-
-                if (existingTenant) {
-                    tenants = tenants.map(t => t.id === selectedId ? tenantData : t);
-                } else {
-                    tenants.push(tenantData);
-                }
-                
-                saveToStorage('tenants', tenants);
-                refreshTenants();
-                tenantSelect.value = tenantData.id;
-            });
-
-            deleteTenantBtn.addEventListener('click', () => {
-                let tenants = loadFromStorage('tenants');
-                const selectedId = tenantSelect.value;
-                 // J'ai retiré !confirm(...) pour respecter les instructions (pas de popups)
-                if (!selectedId) return;
-                
-                tenants = tenants.filter(t => t.id !== selectedId);
-                saveToStorage('tenants', tenants);
-
-                refreshTenants();
-            });
-
-            tenantSelect.addEventListener('change', () => {
-                loadTenantData(tenantSelect.value);
-                updatePreview();
-            });
-
-            // Biens
-            const refreshProperties = () => {
-                const properties = loadFromStorage('properties');
-                populateSelect(propertySelect, properties, 'address');
-                 if (propertySelect.value) {
-                    loadPropertyData(propertySelect.value);
-                 } else if (properties.length > 0) {
-                    propertySelect.value = properties[0].id;
-                    loadPropertyData(properties[0].id);
-                } else {
-                    loadPropertyData('');
-                }
-                updatePreview();
-            };
-
-            const loadPropertyData = (id) => {
-                const properties = loadFromStorage('properties');
-                const property = properties.find(p => p.id === id);
-                if (property) {
-                    propertyAddressInput.value = property.address;
-                } else {
-                    propertyAddressInput.value = '';
-                }
-            };
-
-            savePropertyBtn.addEventListener('click', () => {
-                let properties = loadFromStorage('properties');
-                const selectedId = propertySelect.value;
-                let existingProperty = null;
-                if (selectedId) {
-                    existingProperty = properties.find(p => p.id === selectedId);
-                }
-
-                const propertyData = {
-                    id: existingProperty ? selectedId : crypto.randomUUID(),
-                    address: propertyAddressInput.value,
-                };
-
-                if (existingProperty) {
-                    properties = properties.map(p => p.id === selectedId ? propertyData : p);
-                } else {
-                    properties.push(propertyData);
-                }
-                
-                saveToStorage('properties', properties);
-                refreshProperties();
-                propertySelect.value = propertyData.id;
-            });
+        // --- Logique de Génération de l'Aperçu ---
+        function updatePreview() {
+            console.log("Mise à jour de l'aperçu...");
             
-            deletePropertyBtn.addEventListener('click', () => {
-                let properties = loadFromStorage('properties');
-                const selectedId = propertySelect.value;
-                 // J'ai retiré !confirm(...) pour respecter les instructions (pas de popups)
-                if (!selectedId) return;
-                
-                properties = properties.filter(p => p.id !== selectedId);
-                saveToStorage('properties', properties);
+            // 1. Récupérer les données sélectionnées
+            const landlord = appState.currentLandlord;
+            const property = appState.properties.find(p => p.id === genPropertySelect.value);
+            const tenant = appState.tenants.find(t => t.id === genTenantSelect.value);
 
-                refreshProperties();
-            });
+            const rent = parseFloat(genRentInput.value) || 0;
+            const charges = parseFloat(genChargesInput.value) || 0;
+            const total = rent + charges;
 
-        propertySelect.addEventListener('change', () => {
-                loadPropertyData(propertySelect.value);
-                updatePreview();
-            });
+            const monthIndex = parseInt(genMonthSelect.value);
+            const monthName = genMonthSelect.options[genMonthSelect.selectedIndex].text;
+            const year = genYearInput.value;
+            const paymentDate = genDateInput.value;
 
-            // --- FONCTION DE MISE À JOUR DE LA QUITTANCE ET DU GRAPHIQUE ---
+            // 2. Mettre à jour l'aperçu
+            preview.landlordName.textContent = landlord.name || '[Votre Nom]';
+            preview.landlordAddress.textContent = landlord.address || '[Votre Adresse]';
+            preview.landlordName2.textContent = landlord.name || '[Votre Nom]';
+            preview.landlordName3.textContent = landlord.name || '[Votre Nom]';
 
-            const updatePreview = () => {
-                // Formats
-                const formatCurrency = (num) => isNaN(num) ? '0,00 €' : num.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
-                const formatDate = (dateStr) => {
-                    if (!dateStr) return 'jj-mm-aaaa';
-                    const [year, month, day] = dateStr.split('-');
-                    return `${day}-${month}-${year}`;
-                };
-                
-                // Calculs
-                const rent = parseFloat(rentAmountInput.value) || 0;
-                const charges = parseFloat(chargesAmountInput.value) || 0;
-                const total = rent + charges;
-                totalAmountInput.value = total.toFixed(2);
-                
-                const totalInWords = numberToFrenchWords(total);
+            preview.tenantName.textContent = tenant?.name || '[Nom Locataire]';
+            preview.tenantName2.textContent = tenant?.name || '[Nom Locataire]';
+            preview.tenantAddress.textContent = tenant?.address || '[Adresse Locataire]';
 
-                // Mise à jour de la prévisualisation
-                const owner = loadFromStorage('owners').find(o => o.id === ownerSelect.value) || { name: '', phone: '', email: '' };
-                const tenant = loadFromStorage('tenants').find(t => t.id === tenantSelect.value) || { name: '', address: '', phone: '', email: '' }; // Modifié
-                const property = loadFromStorage('properties').find(p => p.id === propertySelect.value) || { address: '' };
+            preview.propertyAddress.textContent = property?.address || '[Adresse du Bien]';
 
+            preview.period.textContent = `${monthName} ${year}`;
+            
+            const firstDay = new Date(year, monthIndex, 1).toLocaleDateString('fr-FR');
+            const lastDay = new Date(year, monthIndex + 1, 0).toLocaleDateString('fr-FR');
+            preview.periodFull.textContent = `du ${firstDay} au ${lastDay}`;
 
-                preview.ownerName.textContent = owner.name;
-                preview.ownerName2.textContent = owner.name;
-                preview.ownerName3.textContent = owner.name;
-                preview.ownerPhone.textContent = owner.phone;
-                preview.ownerEmail.textContent = owner.email;
+            preview.rentAmount.textContent = formatCurrency(rent) + ' €';
+            preview.chargesAmount.textContent = formatCurrency(charges) + ' €';
+            preview.totalAmount.textContent = formatCurrency(total) + ' €';
 
-                preview.tenantName.textContent = tenant.name;
-                preview.tenantName2.textContent = tenant.name;
-                preview.tenantAddress.textContent = tenant.address;
-                preview.tenantPhone.textContent = tenant.phone || ''; // Ajouté
-                preview.tenantEmail.textContent = tenant.email || ''; // Ajouté
+            preview.dateIssued.textContent = formatDate(paymentDate);
+            
+            preview.totalWords.textContent = numberToFrenchWords(total);
+        }
 
-                preview.propertyAddress.textContent = property.address;
+        // --- Conversion Nombres en Lettres (Adapté) ---
+        function numberToFrenchWords(number) {
+            const parts = parseFloat(number).toFixed(2).split('.');
+            const euros = parseInt(parts[0], 10);
+            const centimes = parseInt(parts[1], 10);
 
-                preview.periodStart.textContent = formatDate(periodStartInput.value);
-                preview.periodEnd.textContent = formatDate(periodEndInput.value);
-                preview.periodStart2.textContent = formatDate(periodStartInput.value);
-                preview.periodEnd2.textContent = formatDate(periodEndInput.value);
+            let words = `${convert(euros)} euro${euros > 1 ? 's' : ''}`;
+            if (centimes > 0) {
+                words += ` et ${convert(centimes)} centime${centimes > 1 ? 's' : ''}`;
+            }
+            return words.charAt(0).toUpperCase() + words.slice(1);
+        }
 
-                preview.rentAmount.textContent = formatCurrency(rent);
-                preview.chargesAmount.textContent = formatCurrency(charges);
-                preview.totalAmount.textContent = formatCurrency(total);
-                
-                preview.totalDue.textContent = formatCurrency(total);
-                preview.totalPaid.textContent = formatCurrency(total);
-                preview.totalRemaining.textContent = formatCurrency(0);
+        function convert(num) {
+            if (num === 0) return 'zéro';
+            
+            const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+            const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+            const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
 
-                preview.totalWords.textContent = totalInWords;
-                preview.totalWords2.textContent = totalInWords;
-                
-                preview.dateIssued.textContent = formatDate(dateIssuedInput.value);
-
-                // Mise à jour du graphique
-                updateRentChart(rent, charges);
-            };
-
-            // --- FONCTION DE MISE À JOUR DU GRAPHIQUE ---
-            const updateRentChart = (rent, charges) => {
-                if (rentChartInstance) {
-                    rentChartInstance.destroy(); // Détruit l'ancienne instance si elle existe
+            let str = '';
+            
+            const processPart = (n) => {
+                let part = '';
+                if (n >= 100) {
+                    let hundreds = Math.floor(n / 100);
+                    part += (hundreds > 1 ? units[hundreds] + '-' : '') + 'cent' + (hundreds > 1 && (n % 100 === 0) ? 's' : '');
+                    n %= 100;
+                    if(n > 0) part += ' ';
                 }
-
-                chartRentDisplay.textContent = rent.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
-                chartChargesDisplay.textContent = charges.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
-
-                rentChartInstance = new Chart(rentChartCanvas, {
-                    type: 'pie', // Type de graphique (camembert)
-                    data: {
-                        labels: ['Loyer', 'Charges'],
-                        datasets: [{
-                            data: [rent, charges],
-                            backgroundColor: ['#3B82F6', '#10B981'], // Couleurs Tailwind (bleu, vert)
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    font: {
-                                        size: 14
-                                    }
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Répartition Loyer / Charges',
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                },
-                                padding: {
-                                    top: 10,
-                                    bottom: 15
-                                }
-                            }
-                        }
-                    }
-                });
-            };
-
-
-            // --- FONCTION DE CONVERSION NOMBRE EN LETTRES ---
-            // (Adaptation simplifiée pour les montants de loyer)
-            const numberToFrenchWords = (number) => {
-                const parts = parseFloat(number).toFixed(2).split('.');
-                const euros = parseInt(parts[0], 10);
-                const centimes = parseInt(parts[1], 10);
-
-                let words = `${convert(euros)} Euro${euros > 1 ? 's' : ''}`;
-                if (centimes > 0) {
-                    words += ` ${convert(centimes)} centime${centimes > 1 ? 's' : ''}`;
-                }
-                return words.charAt(0).toUpperCase() + words.slice(1);
-            };
-
-            const convert = (num) => {
-                if (num === 0) return 'zéro';
                 
-                const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
-                const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
-                const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
-
-                let str = '';
-                
-                const processPart = (n) => {
-                    let part = '';
-                    if (n >= 100) {
-                        let hundreds = Math.floor(n / 100);
-                        part += (hundreds > 1 ? units[hundreds] + ' ' : '') + 'cent' + (hundreds > 1 && (n % 100 === 0) ? 's' : '');
-                        n %= 100;
-                        if(n > 0) part += ' ';
-                    }
-                    
-                    if (n >= 10 && n <= 19) {
-                        part += teens[n - 10];
-                    } else if (n >= 20) {
-                        let ten = Math.floor(n / 10);
-                        part += tens[ten];
-                        n %= 10;
-                        if (n > 0) {
-                             if(ten === 7 || ten === 9) { // soixante-onze, quatre-vingt-onze
-                                part = tens[ten-1] + '-' + teens[n];
-                             } else if (ten === 8 && n > 0) { // quatre-vingt-un
-                                part += '-' + units[n];
-                             } else if (n === 1 && ten < 8) { // vingt-et-un
-                                part += '-et-' + units[n];
-                             } else {
-                                part += '-' + units[n];
-                             }
+                if (n >= 10 && n <= 19) {
+                    part += teens[n - 10];
+                } else if (n >= 20) {
+                    let ten = Math.floor(n / 10);
+                    part += tens[ten];
+                    n %= 10;
+                    if (n > 0) {
+                        if(ten === 7 || ten === 9) { 
+                            part = tens[ten-1] + '-' + teens[n];
+                        } else if (ten === 8 && n > 0) { 
+                            part += '-' + units[n];
+                        } else if (n === 1 && ten < 8) { 
+                            part += '-et-' + units[n];
                         } else {
-                            if(ten === 8) part += 's'; // quatre-vingts
+                            part += '-' + units[n];
                         }
-                    } else if (n > 0) {
-                        part += units[n];
-                    }
-                    return part;
-                }
-
-                if (num >= 1000) {
-                    let thousands = Math.floor(num / 1000);
-                    str += (thousands > 1 ? processPart(thousands) + ' ' : '') + 'mille';
-                    num %= 1000;
-                    if(num > 0) str += ' ';
-                }
-                
-                str += processPart(num);
-                
-                // Nettoyage final
-                return str.replace(/-et-un/g, '-et-un').trim();
-            };
-
-            // --- NOUVELLES FONCTIONS GEMINI API ---
-
-            /**
-             * Effectue un appel fetch avec une politique d'essai exponentielle.
-             */
-            const fetchWithRetry = async (url, options, retries = 3, delay = 1000) => {
-                for (let i = 0; i < retries; i++) {
-                    try {
-                        const response = await fetch(url, options);
-                        if (response.ok) {
-                            return response.json();
-                        }
-                        if (response.status >= 400 && response.status < 500) {
-                            console.error('Erreur client:', response.status);
-                            const errorData = await response.json();
-                            throw new Error(errorData.error?.message || 'Erreur client');
-                        }
-                        // Réessayer pour les erreurs 5xx ou de limitation de débit
-                        console.warn(`Nouvel essai ${i + 1}/${retries} après ${delay}ms...`);
-                        await new Promise(res => setTimeout(res, delay));
-                        delay *= 2;
-                    } catch (error) {
-                        if (i === retries - 1) throw error; // Lève l'erreur après le dernier essai
-                        console.warn(`Erreur Fetch, nouvel essai ${i + 1}/${retries}...`);
-                        await new Promise(res => setTimeout(res, delay));
-                        delay *= 2;
-                    }
-                }
-                throw new Error("Échec de l'appel API après plusieurs essais.");
-            };
-
-            /**
-             * Appelle l'API Gemini pour générer un brouillon d'email.
-             */
-            const generateEmailDraft = async () => {
-                generateEmailBtn.disabled = true;
-                generateEmailBtn.textContent = 'Génération...';
-                geminiResult.value = '';
-
-                // La clé API est laissée vide, comme demandé (sera fournie par l'environnement)
-                const apiKey = ""; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-                // Récupérer les données actuelles
-                const owner = loadFromStorage('owners').find(o => o.id === ownerSelect.value) || {};
-                const tenant = loadFromStorage('tenants').find(t => t.id === tenantSelect.value) || {};
-                const property = loadFromStorage('properties').find(p => p.id === propertySelect.value) || {};
-                const total = totalAmountInput.value;
-                const topic = geminiTopic.value;
-                const notes = geminiNotes.value;
-
-                // Construire le prompt
-                const systemPrompt = `Tu es un assistant de gestion immobilière en France. Rédige des emails clairs, professionnels et polis. 
-Tu dois toujours vouvoyer le locataire ('Vous'). 
-Commence l'email par "Bonjour [Nom du Locataire]," et termine par "Cordialement,\n[Nom du Propriétaire]".
-N'ajoute pas d'objet (Subject:).
-
-Pour le sujet 'envoi quittance', rédige un message très court pour accompagner la quittance de loyer en pièce jointe.
-Pour le sujet 'rappel amical', rédige un rappel poli pour le loyer.
-Pour le sujet 'relance retard', sois ferme mais professionnel.
-Pour le sujet 'réponse maintenance', accuse réception de la demande et indique que tu vas l'examiner.
-Pour le sujet 'information générale', sois neutre.`;
-
-                const userQuery = `
-                Rédige un brouillon d'email basé sur les informations suivantes :
-                - Nom du Propriétaire : ${owner.name || 'non spécifié'}
-                - Nom du Locataire : ${tenant.name || 'non spécifié'}
-                - Adresse du bien : ${property.address || 'non spécifié'}
-                - Montant du loyer (si pertinent) : ${total} €
-                - Sujet de l'email : ${topic}
-                - Notes additionnelles à inclure : ${notes || 'aucune'}
-                `;
-
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: {
-                        parts: [{ text: systemPrompt }]
-                    },
-                };
-
-                try {
-                    const result = await fetchWithRetry(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) {
-                        geminiResult.value = text;
                     } else {
-                        geminiResult.value = "Erreur : La réponse de l'API est vide ou mal formée.";
+                        if(ten === 8) part += 's'; // quatre-vingts
                     }
-                } catch (error) {
-                    console.error('Erreur API Gemini:', error);
-                    geminiResult.value = `Erreur lors de la génération du brouillon : ${error.message}`;
-                } finally {
-                    generateEmailBtn.disabled = false;
-                    generateEmailBtn.innerHTML = "<i class=\"fas fa-magic mr-2\"></i> Générer un brouillon d'email";
+                } else if (n > 0) {
+                    part += units[n];
                 }
-            };
-
-            // Écouteur pour le bouton de génération
-            generateEmailBtn.addEventListener('click', generateEmailDraft);
-
-            // NOUVEL ÉCOUTEUR pour le bouton d'envoi d'email
-            emailBtn.addEventListener('click', () => {
-                const tenant = loadFromStorage('tenants').find(t => t.id === tenantSelect.value) || {};
-                
-                if (!tenant.email) {
-                    geminiResult.value = "ERREUR : L'email du locataire n'est pas renseigné. Veuillez l'ajouter dans la section 'Gestion' avant d'envoyer un email.";
-                    return;
-                }
-
-                // Utilise la fonction de formatage de date pour le sujet
-                const formatDate = (dateStr) => {
-                    if (!dateStr) return 'jj-mm-aaaa';
-                    const [year, month, day] = dateStr.split('-');
-                    return `${day}-${month}-${year}`;
-                };
-
-                const subject = `Quittance de Loyer - Période du ${formatDate(periodStartInput.value)} au ${formatDate(periodEndInput.value)}`;
-                
-                // Récupère le corps de l'email depuis le brouillon généré
-                const body = geminiResult.value;
-
-                if (!body) {
-                    geminiResult.value = "Veuillez d'abord 'Générer un brouillon d'email' avant de l'envoyer.";
-                    return;
-                }
-
-                // Crée le lien mailto:
-                const mailtoLink = `mailto:${tenant.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                
-                // Ouvre le client de messagerie de l'utilisateur
-                window.location.href = mailtoLink;
-            });
-
-            // Écouteur pour le bouton Copier
-            copyEmailBtn.addEventListener('click', () => {
-                if (!geminiResult.value) return;
-                geminiResult.select();
-                // Utilisation de document.execCommand pour une meilleure compatibilité (selon les instructions)
-                try {
-                    document.execCommand('copy');
-                    copyEmailBtn.textContent = 'Copié !';
-                    setTimeout(() => { copyEmailBtn.innerHTML = '<i class="fas fa-copy mr-2"></i> Copier le brouillon'; }, 2000);
-                } catch (err) {
-                    console.error('Échec de la copie', err);
-                    copyEmailBtn.textContent = 'Échec copie';
-                     setTimeout(() => { copyEmailBtn.innerHTML = '<i class="fas fa-copy mr-2"></i> Copier le brouillon'; }, 2000);
-                }
-            });
-
-
-            // --- INITIALISATION ---
-
-            // Définir les dates par défaut
-            const today = new Date();
-            dateIssuedInput.valueAsDate = today;
-            
-            // Période du mois en cours
-            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            periodStartInput.valueAsDate = firstDay;
-            periodEndInput.valueAsDate = lastDay;
-            
-             // Si c'est la première visite, charger les données de l'exemple
-             if (loadFromStorage('owners').length === 0) {
-                 console.log('Première visite, chargement des données exemples.');
-                // Sauvegarde initiale sans déclencher les fonctions de rafraîchissement
-                const exampleOwner = { id: crypto.randomUUID(), name: 'René Osias ASSENDAHI', phone: '0668336085', email: 'essonne1992@gmail.com' };
-                saveToStorage('owners', [exampleOwner]);
-                
-                const exampleTenant = { id: crypto.randomUUID(), name: 'SOLIHA SEINE ET MARNE', address: '76 rue dian fossey 77000 melun', phone: '', email: '' }; // Modifié
-                saveToStorage('tenants', [exampleTenant]);
-
-                const exampleProperty = { id: crypto.randomUUID(), name: '76 rue dian fossey 77000 melun', address: '76 rue dian fossey 77000 melun' };
-                saveToStorage('properties', [exampleProperty]);
+                return part;
             }
 
-            // Charger les données initiales
-            refreshOwners();
-            refreshTenants();
-            refreshProperties();
-
-            // Mettre à jour la prévisualisation une première fois
-            if (loadFromStorage('owners').length > 0) {
-                 // Ne pas simuler de clic, juste charger les données
-                 loadOwnerData(ownerSelect.value);
-                 loadTenantData(tenantSelect.value);
-                 loadPropertyData(propertySelect.value);
+            if (num >= 1000) {
+                let thousands = Math.floor(num / 1000);
+                str += (thousands > 1 ? processPart(thousands) + '-' : '') + 'mille';
+                num %= 1000;
+                if(num > 0) str += ' ';
             }
+            
+            str += processPart(num);
+            return str.replace(/-et-un/g, '-et-un').trim();
+        }
 
-            // Mettre à jour la prévisualisation une première fois
-            updatePreview(); // Assure que la preview est à jour au chargement
-
-            // Ajouter les écouteurs d'événements pour la mise à jour en direct
-            const allInputs = document.querySelectorAll('.form-input, .form-select');
-            allInputs.forEach(input => {
-                input.addEventListener('input', updatePreview);
-                input.addEventListener('change', updatePreview);
-            });
-
-            // Écouteur pour l'impression
-            printBtn.addEventListener('click', () => {
-                window.print();
-            });
-        });
     </script>
 </body>
 </html>
