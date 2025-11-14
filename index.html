@@ -37,6 +37,21 @@
                 box-shadow: none;
                 border: none; /* Pas de bordure pour l'impression */
             }
+            
+            /* !! IMPORTANT : Ajout de !important pour surcharger les styles inline !! */
+            #receipt-preview {
+                position: static !important; /* Changer en static pour l'impression */
+                left: auto !important;
+                top: auto !important;
+                width: 100% !important; /* Forcer la largeur à 100% de la page */
+                min-height: auto !important; /* CRUCIAL: annule le min-height inline */
+                height: auto !important; /* Permet au contenu de fluer */
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+
             /* Cache les éléments de l'interface dans la zone d'impression */
             .no-print {
                 display: none;
@@ -350,7 +365,7 @@
                         </div>
                     </div>
 
-                    <h1 class="text-3xl font-bold text-center my-12 text-indigo-800 relative z-10 tracking-wide">QUITTANCE DE LOYER</h1>
+                    <h1 class="text-3xl font-bold text-center my-12 text-white bg-gradient-to-r from-blue-600 to-indigo-700 p-4 rounded-lg shadow-md relative z-10 tracking-wide">QUITTANCE DE LOYER</h1>
 
                     <div class="text-right mb-8 relative z-10">
                         Période du <span id="preview-period-start" class="font-medium">01-04-2025</span> au <span id="preview-period-end" class="font-medium">30-04-2025</span>
@@ -363,8 +378,8 @@
                     <table class="w-full my-8 border-collapse relative z-10">
                         <thead>
                             <tr>
-                                <th class="border p-3 text-left bg-gray-100 font-semibold text-gray-700">Description</th>
-                                <th class="border p-3 text-right bg-gray-100 font-semibold text-gray-700">Montant</th>
+                                <th class="border p-3 text-left bg-blue-100 font-semibold text-blue-800">Description</th>
+                                <th class="border p-3 text-right bg-blue-100 font-semibold text-blue-800">Montant</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -377,8 +392,8 @@
                                 <td class="border p-3 text-right text-gray-800" id="preview-charges-amount">91,00 €</td>
                             </tr>
                             <tr>
-                                <td class="border p-3 text-left bg-gray-50 font-bold text-gray-900">TOTAL</td>
-                                <td class="border p-3 text-right bg-gray-50 font-bold text-gray-900" id="preview-total-amount">539,85 €</td>
+                                <td class="border p-3 text-left bg-blue-600 font-bold text-white">TOTAL</td>
+                                <td class="border p-3 text-right bg-blue-600 font-bold text-white" id="preview-total-amount">539,85 €</td>
                             </tr>
                         </tbody>
                     </table>
