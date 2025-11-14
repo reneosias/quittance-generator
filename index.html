@@ -14,6 +14,11 @@
     <style>
         /* Styles pour l'impression */
         @media print {
+             @page {
+                size: A4;
+                margin: 20mm; /* Marge d'impression standard */
+            }
+
             /* Cache tout sauf la zone d'impression */
             body * {
                 visibility: hidden;
@@ -22,17 +27,27 @@
                 visibility: visible;
             }
             #receipt-preview {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
+                position: relative; /* Positionnement pour l'impression */
+                left: auto;
+                top: auto;
+                width: 100%; /* S'adapte à la page d'impression */
+                min-height: auto; /* La hauteur s'ajuste */
                 margin: 0;
-                padding: 10px;
+                padding: 0; /* Pas de padding pour l'impression */
                 box-shadow: none;
-                border: none;
+                border: none; /* Pas de bordure pour l'impression */
             }
             /* Cache les éléments de l'interface dans la zone d'impression */
             .no-print {
+                display: none;
+            }
+            
+            /* Retirer la bordure bleue de la preview à l'impression */
+            #receipt-preview {
+                 border-top: none !important;
+            }
+            /* Cacher le logo décoratif à l'impression */
+             .receipt-logo {
                 display: none;
             }
         }
@@ -287,7 +302,7 @@
             </div>
 
             <!-- Colonne de droite : Prévisualisation --><div class="lg:col-span-2 fade-in" style="animation-delay: 200ms;">
-                <div id="receipt-preview" class="bg-white p-8 md:p-12 shadow-2xl rounded-lg border border-gray-200 min-h-[1123px] max-w-[794px] mx-auto relative" style="width: 21cm; min-height: 29.7cm;">
+                <div id="receipt-preview" class="bg-white p-8 md:p-12 shadow-2xl rounded-lg border border-gray-200 mx-auto relative" style="width: 21cm; min-height: 29.7cm; max-width: 100%;">
                     <!-- Icône décorative pour la quittance --><div class="receipt-logo"><i class="fas fa-building"></i></div>
                     
                     <div class="grid grid-cols-2 gap-10 mb-8 relative z-10">
@@ -1031,7 +1046,7 @@ Pour le sujet 'information générale', sois neutre.`;
                     geminiResult.value = `Erreur lors de la génération du brouillon : ${error.message}`;
                 } finally {
                     generateEmailBtn.disabled = false;
-                    generateEmailBtn.textContent = "<i class=\"fas fa-magic mr-2\"></i> Générer un brouillon d'email";
+                    generateEmailBtn.innerHTML = "<i class=\"fas fa-magic mr-2\"></i> Générer un brouillon d'email";
                 }
             };
 
@@ -1079,11 +1094,11 @@ Pour le sujet 'information générale', sois neutre.`;
                 try {
                     document.execCommand('copy');
                     copyEmailBtn.textContent = 'Copié !';
-                    setTimeout(() => { copyEmailBtn.textContent = '<i class="fas fa-copy mr-2"></i> Copier le brouillon'; }, 2000);
+                    setTimeout(() => { copyEmailBtn.innerHTML = '<i class="fas fa-copy mr-2"></i> Copier le brouillon'; }, 2000);
                 } catch (err) {
                     console.error('Échec de la copie', err);
                     copyEmailBtn.textContent = 'Échec copie';
-                     setTimeout(() => { copyEmailBtn.textContent = '<i class="fas fa-copy mr-2"></i> Copier le brouillon'; }, 2000);
+                     setTimeout(() => { copyEmailBtn.innerHTML = '<i class="fas fa-copy mr-2"></i> Copier le brouillon'; }, 2000);
                 }
             });
 
@@ -1126,10 +1141,10 @@ Pour le sujet 'information générale', sois neutre.`;
                  loadTenantData(tenantSelect.value);
                  loadPropertyData(propertySelect.value);
             }
- 
+
             // Mettre à jour la prévisualisation une première fois
             updatePreview(); // Assure que la preview est à jour au chargement
- 
+
             // Ajouter les écouteurs d'événements pour la mise à jour en direct
             const allInputs = document.querySelectorAll('.form-input, .form-select');
             allInputs.forEach(input => {
@@ -1145,4 +1160,3 @@ Pour le sujet 'information générale', sois neutre.`;
     </script>
 </body>
 </html>
-
