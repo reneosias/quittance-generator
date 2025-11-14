@@ -4,48 +4,176 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Générateur de Quittances de Loyer</title>
-    <!-- Importation de Tailwind CSS pour le style -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importation de Tailwind CSS pour le style --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bibliothèque pour la génération de PDF --><script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Google Fonts: Inter pour le corps de texte, Poppins pour les titres --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Styles pour l'impression de la quittance */
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            /* Cache tout sauf la zone d'impression */
-            body > * {
-                display: none;
-            }
-            #receipt-print-area,
-            #receipt-print-area * {
-                display: block;
-                visibility: visible;
-            }
+        /* Styles personnalisés */
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+        h1, h2, h3 {
+            font-family: 'Poppins', sans-serif;
+        }
+        .active-tab {
+            border-color: #2563EB !important; /* Blue 600 */
+            color: #2563EB !important;
+            font-weight: 600;
+        }
+        .inactive-tab {
+            border-color: transparent !important;
+            color: #6B7280 !important; /* Gray 500 */
+        }
+        .tab-content.inactive-content {
+            display: none;
+        }
+        .tab-content.active-content {
+            display: block;
+        }
+        
+        /* Styles pour l'impression de la quittance (modale) */
+        /* Note: Ces styles s'appliquent à #receipt-print-area uniquement pour l'aperçu et l'impression/PDF */
+        #receipt-print-area {
+            background-color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            line-height: 1.6;
+            padding: 30px; /* Base padding */
+            box-sizing: border-box; /* Important for width calculations */
+            position: relative;
+            overflow: hidden; /* Ensure background patterns don't overflow */
+            /* Ajout d'une image de fond légère */
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cLMzYzMC81MDAwLzIwMDAiPgo8cGF0aCBmaWxsPSIjZjhmOGY4IiBmaWxsLW9wYWNpdHk9IjAuNSIgZD0iTSAwIDMwIEwgNTAgMzAgTCA1MCA1MCBMIDAgNTAgeiIgLz4KPC9zdmc+');
+            background-repeat: repeat;
+            background-size: 20px 20px;
+        }
+        #receipt-print-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background-color: #2563EB; /* Bande bleue en haut */
+        }
+        #receipt-print-area::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background-color: #10B981; /* Bande verte en bas */
+        }
+        #receipt-print-area h1 {
+            color: #2563EB; /* Titre bleu */
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #2563EB;
+            padding-bottom: 15px;
+            position: relative;
+        }
+        #receipt-print-area h1::before {
+            content: '🏠'; /* Symbole maison */
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%) translateY(-250%);
+            font-size: 1.5rem;
+            color: #10B981; /* Vert */
+        }
+        #receipt-print-area .section-header {
+            font-weight: bold;
+            color: #10B981; /* Vert pour les en-têtes de section */
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        #receipt-print-area .info-block {
+            padding: 10px;
+            border-left: 3px solid #10B981; /* Bande verte sur le côté */
+            margin-bottom: 1.5rem;
+            background-color: #f8fcf8; /* Fond légèrement vert */
+        }
+        #receipt-print-area .detail-table {
+            width: 100%; /* Tableau prend toute la largeur */
+            max-width: 350px; /* Max width for readability */
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #receipt-print-area .detail-table th,
+        #receipt-print-area .detail-table td {
+            border: 1px solid #e0e0e0;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        #receipt-print-area .detail-table th {
+            background-color: #EBF8FF; /* Bleu clair */
+            color: #2563EB;
+            font-weight: 600;
+        }
+        #receipt-print-area .detail-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #receipt-print-area .total-row td {
+            font-weight: bold;
+            background-color: #EBF8FF; /* Bleu clair */
+            color: #2563EB;
+        }
+        #receipt-print-area .signature-area {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 15px;
+            border-top: 2px dashed #ccc;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        /* Responsive adjustments for print area */
+        @media screen and (max-width: 768px) {
             #receipt-print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 2cm; /* Marges d'impression */
-                font-family: 'Times New Roman', Times, serif;
-                font-size: 12pt;
-                color: #000;
+                padding: 20px;
             }
-            /* Cache les boutons dans la version imprimée */
-            .no-print {
-                display: none !important;
+            #receipt-print-area h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Masque les éléments non imprimables lors de l'impression physique */
+        @media print {
+            body { margin: 0; padding: 0; }
+            body > *:not(#receipt-modal):not(#receipt-print-area) { display: none; }
+            #receipt-modal {
+                position: static; /* Position static pour l'impression */
+                background: none;
+                box-shadow: none;
+            }
+            #receipt-modal .no-print { display: none !important; }
+            #receipt-print-area {
+                width: 100% !important;
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+                margin: 0;
+                padding: 2cm !important; /* Marges pour l'impression physique */
+                position: static;
+                font-size: 11pt; /* Taille de police pour l'impression */
             }
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800" style="font-family: 'Inter', sans-serif;">
+<body class="bg-gradient-to-br from-blue-50 to-green-50 font-sans text-gray-800 antialiased">
 
-    <div class="container mx-auto max-w-5xl p-4 sm:p-8">
-        <h1 class="text-3xl font-bold text-center text-blue-700 mb-6">Gestionnaire de Quittances de Loyer</h1>
+    <div class="container mx-auto max-w-5xl p-4 sm:p-8 bg-white rounded-xl shadow-lg my-8">
+        <h1 class="text-4xl font-extrabold text-center text-blue-700 mb-8 tracking-tight">
+            <span class="text-green-500">🏠</span> Gestionnaire de Quittances <span class="text-green-500">Immo</span>
+        </h1>
 
-        <!-- Onglets de navigation -->
-        <div class="mb-6">
+        <!-- Onglets de navigation --><div class="mb-6 border-b border-gray-200">
             <div class="sm:hidden">
                 <select id="tabs-select" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     <option value="tab-generate">Générer Quittance</option>
@@ -53,146 +181,151 @@
                 </select>
             </div>
             <div class="hidden sm:block">
-                <nav class="flex border-b border-gray-300">
-                    <button data-tab="tab-generate" class="tab-button active-tab -mb-px whitespace-nowrap border-b-2 border-transparent py-4 px-6 text-base font-medium leading-5 text-gray-500 hover:border-gray-300 hover:text-gray-700 focus:outline-none">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button data-tab="tab-generate" class="tab-button active-tab whitespace-nowrap py-4 px-1 text-lg font-medium">
                         Générer Quittance
                     </button>
-                    <button data-tab="tab-manage" class="tab-button inactive-tab -mb-px whitespace-nowrap border-b-2 border-transparent py-4 px-6 text-base font-medium leading-5 text-gray-500 hover:border-gray-300 hover:text-gray-700 focus:outline-none">
+                    <button data-tab="tab-manage" class="tab-button inactive-tab whitespace-nowrap py-4 px-1 text-lg font-medium">
                         Gérer les Données
                     </button>
                 </nav>
             </div>
         </div>
 
-        <!-- Contenu des onglets -->
-        <div>
-            <!-- Onglet 1: Générer Quittance -->
-            <div id="tab-generate" class="tab-content active-content space-y-6 p-4 sm:p-6 bg-white rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold text-gray-700 border-b pb-3">Nouvelle Quittance</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Contenu des onglets --><div>
+            <!-- Onglet 1: Générer Quittance --><div id="tab-generate" class="tab-content active-content space-y-7 p-4 sm:p-6 bg-white rounded-lg shadow-inner border border-gray-100">
+                <h2 class="text-2xl font-semibold text-gray-700 border-b pb-4 mb-4 text-center">Créez une Quittance Rapidement</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-7">
                     
-                    <!-- Colonne 1: Infos Bailleur, Locataire, Bien -->
-                    <div class="space-y-4">
-                        <div>
-                            <label for="landlord-select" class="block text-sm font-medium text-gray-600 mb-1">Bailleur</label>
-                            <select id="landlord-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
+                    <!-- Colonne 1: Infos Bailleur, Locataire, Bien --><div class="space-y-5">
+                        <div class="field-group">
+                            <label for="landlord-select" class="block text-sm font-medium text-gray-600 mb-1">Bailleur <span class="text-red-500">*</span></label>
+                            <select id="landlord-select" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white"></select>
                         </div>
-                        <div>
-                            <label for="tenant-select" class="block text-sm font-medium text-gray-600 mb-1">Locataire(s)</label>
-                            <select id="tenant-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
+                        <div class="field-group">
+                            <label for="tenant-select" class="block text-sm font-medium text-gray-600 mb-1">Locataire(s) <span class="text-red-500">*</span></label>
+                            <select id="tenant-select" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white"></select>
                         </div>
-                        <div>
-                            <label for="property-select" class="block text-sm font-medium text-gray-600 mb-1">Bien concerné</label>
-                            <select id="property-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
+                        <div class="field-group">
+                            <label for="property-select" class="block text-sm font-medium text-gray-600 mb-1">Bien concerné <span class="text-red-500">*</span></label>
+                            <select id="property-select" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white"></select>
                         </div>
                     </div>
 
-                    <!-- Colonne 2: Infos Paiement -->
-                    <div class="space-y-4">
+                    <!-- Colonne 2: Infos Paiement --><div class="space-y-5">
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="rent-amount" class="block text-sm font-medium text-gray-600 mb-1">Montant Loyer (€)</label>
-                                <input type="number" id="rent-amount" placeholder="650.00" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <div class="field-group">
+                                <label for="rent-amount" class="block text-sm font-medium text-gray-600 mb-1">Montant Loyer (€) <span class="text-red-500">*</span></label>
+                                <input type="number" id="rent-amount" placeholder="650.00" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" value="0">
                             </div>
-                            <div>
-                                <label for="charges-amount" class="block text-sm font-medium text-gray-600 mb-1">Montant Charges (€)</label>
-                                <input type="number" id="charges-amount" placeholder="50.00" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <div class="field-group">
+                                <label for="charges-amount" class="block text-sm font-medium text-gray-600 mb-1">Montant Charges (€) <span class="text-red-500">*</span></label>
+                                <input type="number" id="charges-amount" placeholder="50.00" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" value="0">
                             </div>
                         </div>
-                        <div>
-                            <label for="total-words" class="block text-sm font-medium text-gray-600 mb-1">Montant total (en lettres)</label>
-                            <input type="text" id="total-words" placeholder="Sept cents euros" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <div class="field-group">
+                            <label for="total-words" class="block text-sm font-medium text-gray-600 mb-1">Montant total (en lettres) <span class="text-red-500">*</span></label>
+                            <input type="text" id="total-words" placeholder="Sera rempli automatiquement" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none" readonly>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="period-start" class="block text-sm font-medium text-gray-600 mb-1">Période du</label>
-                                <input type="date" id="period-start" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <div class="field-group">
+                                <label for="period-start" class="block text-sm font-medium text-gray-600 mb-1">Période du <span class="text-red-500">*</span></label>
+                                <input type="date" id="period-start" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                             </div>
-                            <div>
-                                <label for="period-end" class="block text-sm font-medium text-gray-600 mb-1">Période au</label>
-                                <input type="date" id="period-end" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <div class="field-group">
+                                <label for="period-end" class="block text-sm font-medium text-gray-600 mb-1">Période au <span class="text-red-500">*</span></label>
+                                <input type="date" id="period-end" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                             </div>
                         </div>
                     </div>
                 </div>
-                 <!-- Colonne 3: Infos Rédaction -->
-                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-t pt-6">
-                    <div>
-                        <label for="payment-date" class="block text-sm font-medium text-gray-600 mb-1">Date de paiement</label>
-                        <input type="date" id="payment-date" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                 <!-- Colonne 3: Infos Rédaction --><div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-gray-200 pt-6 mt-6">
+                    <div class="field-group">
+                        <label for="payment-date" class="block text-sm font-medium text-gray-600 mb-1">Date de paiement <span class="text-red-500">*</span></label>
+                        <input type="date" id="payment-date" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <div>
-                        <label for="doc-location" class="block text-sm font-medium text-gray-600 mb-1">Fait à</label>
-                        <input type="text" id="doc-location" placeholder="Paris" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <div class="field-group">
+                        <label for="doc-location" class="block text-sm font-medium text-gray-600 mb-1">Fait à <span class="text-red-500">*</span></label>
+                        <input type="text" id="doc-location" placeholder="Votre ville" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <div>
-                        <label for="doc-date" class="block text-sm font-medium text-gray-600 mb-1">Date de rédaction</label>
-                        <input type="date" id="doc-date" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <div class="field-group">
+                        <label for="doc-date" class="block text-sm font-medium text-gray-600 mb-1">Date de rédaction <span class="text-red-500">*</span></label>
+                        <input type="date" id="doc-date" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
 
-                <div class="text-center pt-4">
-                    <button id="generate-button" class="w-full sm:w-auto px-10 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200">
+                <div class="text-center pt-6">
+                    <button id="generate-button" class="w-full sm:w-auto px-12 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-3 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out transform hover:-translate-y-1">
                         Générer la Quittance
                     </button>
                 </div>
             </div>
 
-            <!-- Onglet 2: Gérer les Données -->
-            <div id="tab-manage" class="tab-content inactive-content p-4 sm:p-6 bg-white rounded-lg shadow-md">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Onglet 2: Gérer les Données --><div id="tab-manage" class="tab-content inactive-content p-4 sm:p-6 bg-white rounded-lg shadow-inner border border-gray-100">
+                <h2 class="text-2xl font-semibold text-gray-700 border-b pb-4 mb-4 text-center">Gérer vos informations clés</h2>
 
-                    <!-- Section Bailleurs -->
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Bailleur(s)</h3>
-                        <form id="landlord-form" class="space-y-3">
-                            <input type="text" id="landlord-name" placeholder="Nom Prénom / Raison Sociale" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
-                            <textarea id="landlord-address" placeholder="Adresse complète du bailleur" rows="3" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" required></textarea>
-                            <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700">Ajouter/Mettre à jour</button>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-7">
+
+                    <!-- Section Bailleurs --><div class="border border-blue-200 rounded-lg p-5 bg-blue-50 shadow-sm">
+                        <h3 class="text-xl font-semibold text-blue-700 mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            Bailleur(s)
+                        </h3>
+                        <form id="landlord-form" class="space-y-4">
+                            <input type="text" id="landlord-name" placeholder="Nom Prénom / Raison Sociale" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm" required>
+                            <textarea id="landlord-address" placeholder="Adresse complète du bailleur" rows="3" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm" required></textarea>
+                            <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md hover:bg-blue-700 transition duration-200">Ajouter/Mettre à jour</button>
                         </form>
-                        <ul id="landlord-list" class="mt-4 space-y-2"></ul>
+                        <ul id="landlord-list" class="mt-5 space-y-3"></ul>
                     </div>
 
-                    <!-- Section Locataires -->
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Locataires</h3>
-                        <form id="tenant-form" class="space-y-3">
-                            <input type="text" id="tenant-name" placeholder="Nom(s) du/des locataire(s)" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
-                            <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700">Ajouter</button>
+                    <!-- Section Locataires --><div class="border border-green-200 rounded-lg p-5 bg-green-50 shadow-sm">
+                        <h3 class="text-xl font-semibold text-green-700 mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h2a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-2.414-2.414A1 1 0 0015.586 6H10a2 2 0 00-2 2v10a2 2 0 002 2h6m-7-2v-2m0 2v-5a2 2 0 012-2h2a2 2 0 012 2v5m-7 0h7"></path></svg>
+                            Locataires
+                        </h3>
+                        <form id="tenant-form" class="space-y-4">
+                            <input type="text" id="tenant-name" placeholder="Nom(s) du/des locataire(s)" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm" required>
+                            <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white text-base font-medium rounded-md hover:bg-green-700 transition duration-200">Ajouter</button>
                         </form>
-                        <ul id="tenant-list" class="mt-4 space-y-2"></ul>
+                        <ul id="tenant-list" class="mt-5 space-y-3"></ul>
                     </div>
 
-                    <!-- Section Propriétés -->
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Propriétés</h3>
-                        <form id="property-form" class="space-y-3">
-                            <textarea id="property-address" placeholder="Adresse complète de la propriété" rows="3" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" required></textarea>
-                            <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700">Ajouter</tr>
+                    <!-- Section Propriétés --><div class="border border-yellow-200 rounded-lg p-5 bg-yellow-50 shadow-sm">
+                        <h3 class="text-xl font-semibold text-yellow-700 mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            Propriétés
+                        </h3>
+                        <form id="property-form" class="space-y-4">
+                            <textarea id="property-address" placeholder="Adresse complète de la propriété" rows="3" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm" required></textarea>
+                            <button type="submit" class="w-full px-4 py-2 bg-yellow-600 text-white text-base font-medium rounded-md hover:bg-yellow-700 transition duration-200">Ajouter</button>
                         </form>
-                        <ul id="property-list" class="mt-4 space-y-2"></ul>
+                        <ul id="property-list" class="mt-5 space-y-3"></ul>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modale de prévisualisation de la quittance -->
-    <div id="receipt-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <!-- En-tête de la modale -->
-            <div class="no-print flex justify-between items-center p-4 border-b">
-                <h2 class="text-xl font-semibold">Aperçu de la Quittance</h2>
+    <!-- Modale de prévisualisation de la quittance --><div id="receipt-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[95vh] flex flex-col">
+            <!-- En-tête de la modale --><div class="no-print flex justify-between items-center p-4 sm:p-5 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                <h2 class="text-2xl font-bold text-gray-800">Aperçu de la Quittance</h2>
                 <div>
-                    <button id="print-button" class="px-4 py-2 bg-blue-600 text-white rounded-md mr-2 hover:bg-blue-700">Imprimer</button>
-                    <button id="close-modal" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">&times; Fermer</button>
+                    <button id="download-pdf-button" class="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-md mr-3 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-200">
+                        Télécharger PDF
+                    </button>
+                    <button id="print-button" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-md mr-3 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200">
+                        Imprimer
+                    </button>
+                    <button id="close-modal" class="px-5 py-2.5 bg-gray-300 text-gray-800 font-semibold rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-75 transition duration-200">
+                        &times; Fermer
+                    </button>
                 </div>
             </div>
             
-            <!-- Contenu imprimable de la quittance -->
-            <div id="receipt-print-area" class="p-8 font-serif text-base text-black">
-                <!-- Contenu dynamique généré par JS -->
-            </div>
+            <!-- Contenu imprimable de la quittance --><div id="receipt-print-area" class="flex-grow p-8 sm:p-10 overflow-y-auto">
+                <!-- Contenu dynamique généré par JS --></div>
         </div>
     </div>
 
@@ -210,29 +343,34 @@
 
         // ----- DOM ELEMENTS -----
         const landlordForm = document.getElementById('landlord-form');
-        const landlordName = document.getElementById('landlord-name');
-        const landlordAddress = document.getElementById('landlord-address');
+        const landlordNameInput = document.getElementById('landlord-name');
+        const landlordAddressInput = document.getElementById('landlord-address');
         const landlordList = document.getElementById('landlord-list');
         
         const tenantForm = document.getElementById('tenant-form');
-        const tenantName = document.getElementById('tenant-name');
+        const tenantNameInput = document.getElementById('tenant-name');
         const tenantList = document.getElementById('tenant-list');
 
         const propertyForm = document.getElementById('property-form');
-        const propertyAddress = document.getElementById('property-address');
+        const propertyAddressInput = document.getElementById('property-address');
         const propertyList = document.getElementById('property-list');
 
         const landlordSelect = document.getElementById('landlord-select');
         const tenantSelect = document.getElementById('tenant-select');
         const propertySelect = document.getElementById('property-select');
 
+        const rentAmountInput = document.getElementById('rent-amount');
+        const chargesAmountInput = document.getElementById('charges-amount');
+        const totalWordsInput = document.getElementById('total-words');
+
         const generateButton = document.getElementById('generate-button');
         const modal = document.getElementById('receipt-modal');
         const closeModalButton = document.getElementById('close-modal');
         const printButton = document.getElementById('print-button');
+        const downloadPdfButton = document.getElementById('download-pdf-button'); // Nouveau bouton
         const receiptContent = document.getElementById('receipt-print-area');
 
-        // ----- DATE UTILS -----
+        // ----- DATE & NUMBER UTILS -----
         const formatDate = (dateString) => {
             if (!dateString) return '__________';
             const date = new Date(dateString);
@@ -241,21 +379,80 @@
         
         const getToday = () => new Date().toISOString().split('T')[0];
 
+        // Fonction pour convertir un nombre en mots (français) - Simplifiée pour l'exemple
+        const numberToWords = (num) => {
+            if (num === 0) return "zéro euro";
+            const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize"];
+            const tens = ["", "", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante-dix", "quatre-vingt", "quatre-vingt-dix"];
+            
+            let s = Math.floor(num).toString();
+            let c = (num - Math.floor(num)).toFixed(2).substring(2); // Centimes
+            let result = "";
+
+            const convertChunk = (n) => {
+                if (n < 17) return units[n];
+                if (n < 20) return units[n % 10] + "ze"; // Treize, quatorze etc.
+                if (n < 70) return tens[Math.floor(n / 10)] + (n % 10 === 1 && n !== 21 && n !== 31 && n !== 41 && n !== 51 && n !== 61 ? " et " : "-") + units[n % 10];
+                if (n < 80) return "soixante-" + convertChunk(n - 60);
+                if (n < 90) return "quatre-vingt" + (n > 80 ? "-" + units[n % 10] : "");
+                if (n < 100) return "quatre-vingt-" + convertChunk(n - 80);
+                return ""; // Pour le moment, ne gère pas plus de 99
+            };
+
+            // Gère les nombres jusqu'à 999.99
+            const convertHundreds = (n) => {
+                let text = "";
+                const h = Math.floor(n / 100);
+                const r = n % 100;
+                if (h > 0) {
+                    text += (h === 1 ? "" : units[h] + " ") + "cent" + (h > 1 && r === 0 ? "s" : "") + (r > 0 ? " " : "");
+                }
+                if (r > 0) {
+                    text += convertChunk(r);
+                }
+                return text;
+            };
+
+            let euros = Math.floor(num);
+            let centimes = Math.round((num - euros) * 100);
+
+            if (euros > 0) {
+                result += convertHundreds(euros) + (euros > 1 ? " euros" : " euro");
+            }
+
+            if (centimes > 0) {
+                result += (euros > 0 ? " et " : "") + convertChunk(centimes) + (centimes > 1 ? " centimes" : " centime");
+            }
+            
+            return result.trim().replace(/\s+/g, ' '); // Nettoie les espaces multiples
+        };
+
+        // Fonction pour mettre à jour le montant en lettres
+        const updateAmountInWords = () => {
+            const rent = parseFloat(rentAmountInput.value) || 0;
+            const charges = parseFloat(chargesAmountInput.value) || 0;
+            const total = rent + charges;
+            totalWordsInput.value = numberToWords(total);
+        };
+
+        rentAmountInput.addEventListener('input', updateAmountInWords);
+        chargesAmountInput.addEventListener('input', updateAmountInWords);
+
         // ----- RENDER FUNCTIONS -----
 
         // Fonction générique pour créer un item de liste avec bouton de suppression
         function createListItem(item, text, list, deleteFn) {
             const li = document.createElement('li');
-            li.className = 'flex justify-between items-center p-2 bg-gray-50 rounded-md text-sm';
+            li.className = 'flex justify-between items-center p-3 bg-white rounded-md shadow-sm border border-gray-200 text-sm';
             
             const span = document.createElement('span');
-            span.className = 'whitespace-pre-wrap flex-1 mr-2';
+            span.className = 'whitespace-pre-wrap flex-1 mr-3 text-gray-700';
             span.textContent = text;
             li.appendChild(span);
             
             const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Suppr.';
-            deleteBtn.className = 'px-2 py-1 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600';
+            deleteBtn.textContent = 'Supprimer';
+            deleteBtn.className = 'px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition duration-200';
             deleteBtn.onclick = () => deleteFn(item);
             
             li.appendChild(deleteBtn);
@@ -264,7 +461,7 @@
 
         // Fonction générique pour peupler un <select>
         function populateSelect(select, items, textFn) {
-            select.innerHTML = '<option value="">-- Sélectionner --</option>';
+            select.innerHTML = '<option value="" disabled selected>-- Sélectionner --</option>';
             items.forEach((item, index) => {
                 const option = document.createElement('option');
                 option.value = index; // Utilise l'index comme valeur
@@ -297,29 +494,37 @@
         landlordForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const newLandlord = {
-                name: landlordName.value,
-                address: landlordAddress.value
+                name: landlordNameInput.value,
+                address: landlordAddressInput.value
             };
             // Remplace le bailleur existant ou l'ajoute (on en garde qu'un pour simplifier)
-            landlords = [newLandlord];
+            // Si vous avez plusieurs bailleurs, il faudra adapter cette logique
+            landlords = [newLandlord]; 
             Storage.set('landlords', landlords);
             renderAll();
-            landlordForm.reset();
+            // landlordForm.reset(); // Ne pas reset si on veut qu'il reste pré-rempli
         });
 
         function deleteLandlord(itemToDelete) {
             landlords = landlords.filter(item => item !== itemToDelete);
             Storage.set('landlords', landlords);
             renderAll();
+            // Clear inputs if the deleted landlord was the only one
+            if (landlords.length === 0) {
+                landlordNameInput.value = '';
+                landlordAddressInput.value = '';
+            }
         }
 
         // --- Tenant ---
         tenantForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            tenants.push({ name: tenantName.value });
-            Storage.set('tenants', tenants);
-            renderAll();
-            tenantForm.reset();
+            if (tenantNameInput.value) {
+                tenants.push({ name: tenantNameInput.value });
+                Storage.set('tenants', tenants);
+                renderAll();
+                tenantNameInput.value = ''; // Reset only the name input
+            }
         });
 
         function deleteTenant(itemToDelete) {
@@ -331,10 +536,12 @@
         // --- Property ---
         propertyForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            properties.push({ address: propertyAddress.value });
-            Storage.set('properties', properties);
-            renderAll();
-            propertyForm.reset();
+            if (propertyAddressInput.value) {
+                properties.push({ address: propertyAddressInput.value });
+                Storage.set('properties', properties);
+                renderAll();
+                propertyAddressInput.value = ''; // Reset only the address input
+            }
         });
 
         function deleteProperty(itemToDelete) {
@@ -346,77 +553,87 @@
         // ----- RECEIPT GENERATION -----
         generateButton.addEventListener('click', () => {
             // 1. Récupérer les données sélectionnées
-            const landlord = landlords[landlordSelect.value];
-            const tenant = tenants[tenantSelect.value];
-            const property = properties[propertySelect.value];
+            const selectedLandlordIndex = landlordSelect.value;
+            const selectedTenantIndex = tenantSelect.value;
+            const selectedPropertyIndex = propertySelect.value;
+
+            const landlord = landlords[selectedLandlordIndex];
+            const tenant = tenants[selectedTenantIndex];
+            const property = properties[selectedPropertyIndex];
 
             // 2. Récupérer les valeurs du formulaire
-            const rent = parseFloat(document.getElementById('rent-amount').value) || 0;
-            const charges = parseFloat(document.getElementById('charges-amount').value) || 0;
+            const rent = parseFloat(rentAmountInput.value) || 0;
+            const charges = parseFloat(chargesAmountInput.value) || 0;
             const total = rent + charges;
-            const totalWords = document.getElementById('total-words').value;
+            const totalWords = totalWordsInput.value; // Déjà rempli par la fonction updateAmountInWords
             
             const periodStart = formatDate(document.getElementById('period-start').value);
             const periodEnd = formatDate(document.getElementById('period-end').value);
             const paymentDate = formatDate(document.getElementById('payment-date').value);
-            const docLocation = document.getElementById('doc-location').value || '__________';
+            const docLocation = document.getElementById('doc-location').value;
             const docDate = formatDate(document.getElementById('doc-date').value);
 
-            // 3. Validation (simpliste)
-            if (!landlord || !tenant || !property || !totalWords || !periodStart || !periodEnd || !paymentDate || !docDate) {
-                alert("Veuillez remplir tous les champs et vous assurer d'avoir sélectionné un bailleur, un locataire et une propriété.");
+            // 3. Validation
+            if (!landlord || !tenant || !property || !totalWords || !periodStart || !periodEnd || !paymentDate || !docLocation || !docDate || total === 0) {
+                alert("Veuillez remplir tous les champs obligatoires (marqués d'une *) et vous assurer que le montant total n'est pas zéro.");
                 return;
             }
 
             // 4. Générer le HTML de la quittance
             receiptContent.innerHTML = `
-                <h1 style="text-align: center; font-size: 1.5rem; font-weight: bold; margin-bottom: 2rem;">QUITTANCE DE LOYER</h1>
+                <h1 class="font-poppins">QUITTANCE DE LOYER</h1>
                 
                 <div style="display: flex; justify-content: space-between; margin-bottom: 2rem;">
-                    <div>
-                        <strong>Bailleur :</strong><br>
-                        ${landlord.name.replace(/\n/g, '<br>')}<br>
-                        ${landlord.address.replace(/\n/g, '<br>')}
+                    <div class="info-block" style="flex: 1; margin-right: 1rem;">
+                        <div class="section-header">Bailleur :</div>
+                        <p>${landlord.name.replace(/\n/g, '<br>')}</p>
+                        <p>${landlord.address.replace(/\n/g, '<br>')}</p>
                     </div>
-                    <div>
-                        <strong>Locataire(s) :</strong><br>
-                        ${tenant.name.replace(/\n/g, '<br>')}
+                    <div class="info-block" style="flex: 1; margin-left: 1rem;">
+                        <div class="section-header">Locataire(s) :</div>
+                        <p>${tenant.name.replace(/\n/g, '<br>')}</p>
                     </div>
                 </div>
 
-                <div style="margin-bottom: 2rem;">
-                    <strong>Bien concerné :</strong><br>
-                    ${property.address.replace(/\n/g, '<br>')}
+                <div class="info-block" style="margin-bottom: 2rem;">
+                    <div class="section-header">Bien concerné :</div>
+                    <p>${property.address.replace(/\n/g, '<br>')}</p>
                 </div>
 
-                <p style="margin-bottom: 1.5rem;">
-                    Je soussigné(e), ${landlord.name}, bailleur, déclare avoir reçu de ${tenant.name}
-                    la somme de <strong>${total.toFixed(2)} €</strong>
+                <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
+                    Je soussigné(e), <strong style="color: #2563EB;">${landlord.name}</strong>, bailleur, déclare avoir reçu de <strong style="color: #10B981;">${tenant.name}</strong>
+                    la somme de <strong style="color: #2563EB; font-size: 1.2rem;">${total.toFixed(2).replace('.', ',')} €</strong>
                     (<i>${totalWords}</i>),
-                    au titre du paiement du loyer et des charges pour la période du <strong>${periodStart}</strong> au <strong>${periodEnd}</strong>.
-                    Cette somme a été reçue le <strong>${paymentDate}</strong>.
+                    au titre du paiement du loyer et des charges pour la période du <strong style="color: #10B981;">${periodStart}</strong> au <strong style="color: #10B981;">${periodEnd}</strong>.
+                    Cette somme a été reçue le <strong style="color: #10B981;">${paymentDate}</strong>.
                 </p>
 
-                <p style="margin-bottom: 1.5rem;">Détail du règlement :</p>
+                <p style="margin-bottom: 1.5rem; font-weight: 500;">Détail du règlement :</p>
                 
-                <table style="width: 300px; border-collapse: collapse; margin-bottom: 1.5rem;">
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>Désignation</th>
+                            <th style="text-align: right;">Montant</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         <tr>
-                            <td style="border: 1px solid #000; padding: 8px;">Loyer</td>
-                            <td style="border: 1px solid #000; padding: 8px; text-align: right;">${rent.toFixed(2)} €</td>
+                            <td>Loyer</td>
+                            <td style="text-align: right;">${rent.toFixed(2).replace('.', ',')} €</td>
                         </tr>
                         <tr>
-                            <td style="border: 1px solid #000; padding: 8px;">Provisions sur charges</td>
-                            <td style="border: 1px solid #000; padding: 8px; text-align: right;">${charges.toFixed(2)} €</td>
+                            <td>Provisions sur charges</td>
+                            <td style="text-align: right;">${charges.toFixed(2).replace('.', ',')} €</td>
                         </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 8px;"><strong>TOTAL</strong></td>
-                            <td style="border: 1px solid #000; padding: 8px; text-align: right;"><strong>${total.toFixed(2)} €</strong></td>
+                        <tr class="total-row">
+                            <td><strong>TOTAL</strong></td>
+                            <td style="text-align: right;"><strong>${total.toFixed(2).replace('.', ',')} €</strong></td>
                         </tr>
                     </tbody>
                 </table>
 
-                <p style="margin-bottom: 2rem; font-style: italic; font-size: 0.9rem;">
+                <p style="margin-bottom: 2rem; font-style: italic; font-size: 0.95rem; color: #555;">
                     Cette quittance annule tous les reçus qui auraient pu être donnés pour les sommes versées au titre des loyers et charges pour cette même période.
                     <br>
                     Sous réserve de tous droits.
@@ -424,10 +641,11 @@
 
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 3rem;">
                     <div>
-                        Fait à ${docLocation}, le ${docDate}.
+                        Fait à <strong style="color: #2563EB;">${docLocation}</strong>, le <strong style="color: #10B981;">${docDate}</strong>.
                     </div>
-                    <div style="border-top: 1px solid #000; padding-top: 5px; width: 200px; text-align: center;">
-                        Signature du bailleur
+                    <div class="signature-area">
+                        Signature du bailleur<br>
+                        <strong style="color: #2563EB;">${landlord.name}</strong>
                     </div>
                 </div>
             `;
@@ -439,6 +657,29 @@
         // ----- MODAL & PRINT CONTROLS -----
         closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
         printButton.addEventListener('click', () => window.print());
+
+        // Gérer le téléchargement PDF
+        downloadPdfButton.addEventListener('click', () => {
+            const element = document.getElementById('receipt-print-area');
+            const landlord = landlords[landlordSelect.value]; // Get selected landlord for filename
+            const tenant = tenants[tenantSelect.value]; // Get selected tenant for filename
+            const periodStart = document.getElementById('period-start').value; // Get period start for filename
+            
+            // Generate a filename
+            const filename = `Quittance_Loyer_${landlord ? landlord.name.replace(/[^a-zA-Z0-9]/g, '') : 'Bailleur'}_${tenant ? tenant.name.replace(/[^a-zA-Z0-9]/g, '') : 'Locataire'}_${periodStart || getToday()}.pdf`;
+
+            // Options pour html2pdf
+            const options = {
+                margin: [10, 10, 10, 10], // top, left, bottom, right
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, logging: true, dpi: 192, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(options).from(element).save();
+        });
+
 
         // ----- TABS -----
         const tabs = document.querySelectorAll('.tab-button');
@@ -475,23 +716,6 @@
 
         tabSelect.addEventListener('change', (e) => switchTab(e.target.value));
 
-        // Styles des onglets
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .tab-content.inactive-content { display: none; }
-            .tab-content.active-content { display: block; }
-            .tab-button.active-tab { 
-                border-color: #2563EB; /* blue-600 */
-                color: #2563EB;
-                font-weight: 600;
-            }
-            .tab-button.inactive-tab {
-                border-color: transparent;
-            }
-        `;
-        document.head.appendChild(style);
-
-
         // ----- INITIALIZATION -----
         document.addEventListener('DOMContentLoaded', () => {
             // Charger les données depuis le Local Storage
@@ -502,15 +726,39 @@
             // Remplir les formulaires et listes
             renderAll();
             
-            // Pré-remplir le bailleur s'il n'y en a qu'un
+            // Pré-remplir le bailleur s'il n'y en a qu'un dans les inputs de l'onglet "Gérer"
             if (landlords.length > 0) {
-                landlordName.value = landlords[0].name;
-                landlordAddress.value = landlords[0].address;
+                landlordNameInput.value = landlords[0].name;
+                landlordAddressInput.value = landlords[0].address;
             }
+
+            // Sélectionner le premier élément par défaut si la liste n'est pas vide
+            if (landlordSelect.options.length > 1) landlordSelect.value = landlords.length > 0 ? 0 : '';
+            if (tenantSelect.options.length > 1) tenantSelect.value = tenants.length > 0 ? 0 : '';
+            if (propertySelect.options.length > 1) propertySelect.value = properties.length > 0 ? 0 : '';
+
 
             // Pré-remplir les dates
             document.getElementById('payment-date').value = getToday();
             document.getElementById('doc-date').value = getToday();
+            
+            // Pré-remplir le champ "Fait à" si une adresse de bailleur existe
+            if (landlords.length > 0 && landlords[0].address) {
+                const parts = landlords[0].address.split('\n');
+                if (parts.length > 1) {
+                    const lastLine = parts[parts.length - 1];
+                    const zipCityMatch = lastLine.match(/(\d{5})\s+(.+)/);
+                    if (zipCityMatch) {
+                        document.getElementById('doc-location').value = zipCityMatch[2].trim();
+                    } else {
+                        document.getElementById('doc-location').value = lastLine.trim();
+                    }
+                }
+            }
+
+
+            // Mettre à jour le montant en lettres au chargement
+            updateAmountInWords();
 
             // Activer le premier onglet
             switchTab('tab-generate');
