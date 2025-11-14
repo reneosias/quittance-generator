@@ -50,6 +50,25 @@
              .receipt-logo {
                 display: none;
             }
+
+            /* Réduire les marges verticales excessives UNIQUEMENT à l'impression */
+            #receipt-preview h1, #receipt-preview .my-12 {
+                margin-top: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            #receipt-preview .mb-8, #receipt-preview .my-8 {
+                margin-top: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            #receipt-preview .mt-16 {
+                margin-top: 2rem; /* Réduit de 4rem à 2rem */
+            }
+
+            #receipt-preview .mb-10 {
+                margin-bottom: 1.5rem;
+            }
         }
         
         body {
