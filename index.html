@@ -12,75 +12,62 @@
     <!-- Chart.js pour les graphiques --><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* Styles pour l'impression */
+        /* Styles pour l'impression - NOUVELLE LOGIQUE ROBUSTE */
         @media print {
              @page {
                 size: A4;
                 margin: 20mm; /* Marge d'impression standard */
             }
 
-            /* Cache tout sauf la zone d'impression */
+            /* 1. Cacher tout par défaut */
             body * {
                 visibility: hidden;
             }
+            
+            /* 2. Rendre la quittance et ses enfants visibles */
             #receipt-preview, #receipt-preview * {
                 visibility: visible;
             }
+
+            /* 3. Forcer la quittance à être le seul objet en haut de la page */
             #receipt-preview {
-                position: relative; /* Positionnement pour l'impression */
-                left: auto;
-                top: auto;
-                width: 100%; /* S'adapte à la page d'impression */
-                min-height: auto; /* La hauteur s'ajuste */
-                margin: 0;
-                padding: 0; /* Pas de padding pour l'impression */
-                box-shadow: none;
-                border: none; /* Pas de bordure pour l'impression */
-            }
-            
-            /* !! IMPORTANT : Ajout de !important pour surcharger les styles inline !! */
-            #receipt-preview {
-                position: static !important; /* Changer en static pour l'impression */
-                left: auto !important;
-                top: auto !important;
-                width: 100% !important; /* Forcer la largeur à 100% de la page */
-                min-height: auto !important; /* CRUCIAL: annule le min-height inline */
-                height: auto !important; /* Permet au contenu de fluer */
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                
+                width: 100% !important; /* S'adapte à la largeur de la page d'impression */
+                height: auto !important;
+                min-height: auto !important; /* Annule le style inline/tailwind */
+                
                 margin: 0 !important;
-                padding: 0 !important;
+                padding: 0 !important; /* Pas de padding pour le conteneur principal à l'impression */
+                
                 box-shadow: none !important;
                 border: none !important;
             }
-
-            /* Cache les éléments de l'interface dans la zone d'impression */
-            .no-print {
-                display: none;
-            }
             
-            /* Retirer la bordure bleue de la preview à l'impression */
+            /* 4. Cacher les éléments non imprimables */
+            .no-print, .receipt-logo {
+                display: none !important;
+            }
+
+            /* 5. Retirer la bordure bleue de la preview à l'impression */
             #receipt-preview {
                  border-top: none !important;
             }
-            /* Cacher le logo décoratif à l'impression */
-             .receipt-logo {
-                display: none;
-            }
 
-            /* Réduire les marges verticales excessives UNIQUEMENT à l'impression */
+            /* 6. Réduire les marges verticales excessives UNIQUEMENT à l'impression */
             #receipt-preview h1, #receipt-preview .my-12 {
                 margin-top: 1.5rem;
                 margin-bottom: 1.5rem;
             }
-            
             #receipt-preview .mb-8, #receipt-preview .my-8 {
                 margin-top: 1rem;
                 margin-bottom: 1rem;
             }
-
             #receipt-preview .mt-16 {
                 margin-top: 2rem; /* Réduit de 4rem à 2rem */
             }
-
             #receipt-preview .mb-10 {
                 margin-bottom: 1.5rem;
             }
@@ -128,7 +115,7 @@
         
         /* Styles pour la prévisualisation de la quittance */
         #receipt-preview {
-            border-top: 8px solid #3B82F6; /* Bordure supérieure type "en-tête" */
+            /* border-top: 8px solid #3B82F6; */ /* Remplacé par une classe Tailwind */
             position: relative; /* Pour positionner l'icône */
             overflow: hidden; /* Pour que l'icône ne dépasse pas */
         }
@@ -335,13 +322,15 @@
                 </div>
             </div>
 
-            <!-- Colonne de droite : Prévisualisation --><div class="lg:col-span-2 fade-in" style="animation-delay: 200ms;">
-                <div id="receipt-preview" class="bg-white p-8 md:p-12 shadow-2xl rounded-lg border border-gray-200 mx-auto relative" style="width: 21cm; min-height: 29.7cm; max-width: 100%;">
+            <!-- Colonne de droite : Prévisualisation -->
+            <!-- J'ai remplacé le 'style' par des classes Tailwind (w-[21cm] min-h-[29.7cm]) -->
+            <div class="lg:col-span-2 fade-in" style="animation-delay: 200ms;">
+                <div id="receipt-preview" class="bg-white p-8 md:p-12 shadow-2xl rounded-lg border border-gray-200 mx-auto relative w-[21cm] min-h-[29.7cm] max-w-full border-t-8 border-blue-600">
                     <!-- Icône décorative pour la quittance --><div class="receipt-logo"><i class="fas fa-building"></i></div>
                     
                     <div class="grid grid-cols-2 gap-10 mb-8 relative z-10">
                         <div>
-                            <h3 class="text-sm font-semibold uppercase text-indigo-600 mb-2 tracking-wider">PROPRIÉTAIRE</h3>
+                            <h3 class="text-sm font-semibold uppercase text-indigo-800 mb-2 tracking-wider p-2 bg-indigo-50 rounded">PROPRIÉTAIRE</h3>
                             <div class="font-medium text-gray-800">
                                 <span id="preview-owner-name">René Osias ASSENDAHI</span>
                             </div>
@@ -351,7 +340,7 @@
                             </div>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold uppercase text-indigo-600 mb-2 tracking-wider">LOCATAIRE</h3>
+                            <h3 class="text-sm font-semibold uppercase text-indigo-800 mb-2 tracking-wider p-2 bg-indigo-50 rounded">LOCATAIRE</h3>
                             <div class="font-medium text-gray-800">
                                 <span id="preview-tenant-name">SOLIHA SEINE ET MARNE</span>
                             </div>
@@ -405,9 +394,9 @@
                     <table class="w-full my-8 text-center text-sm relative z-10">
                         <thead>
                             <tr>
-                                <th class="border p-2 bg-gray-100 font-semibold text-gray-700">Montant à verser</th>
-                                <th class="border p-2 bg-gray-100 font-semibold text-gray-700">Montant versé</th>
-                                <th class="border p-2 bg-gray-100 font-semibold text-gray-700">Reste à percevoir</th>
+                                <th class="border p-2 bg-blue-100 font-semibold text-blue-800">Montant à verser</th>
+                                <th class="border p-2 bg-blue-100 font-semibold text-blue-800">Montant versé</th>
+                                <th class="border p-2 bg-blue-100 font-semibold text-blue-800">Reste à percevoir</th>
                             </tr>
                         </thead>
                         <tbody>
